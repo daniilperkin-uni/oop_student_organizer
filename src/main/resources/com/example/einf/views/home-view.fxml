@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.BarChart?>
+<?import javafx.scene.chart.CategoryAxis?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.image.Image?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.FlowPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.layout.VBox?>
+
+
+<TabPane xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.einf.HomeController">
+   <tabs>
+      <Tab closable="false" text="Modules">
+         <content>
+            <BorderPane prefHeight="880.0" prefWidth="1400.0">
+                <center>
+                    <VBox BorderPane.alignment="CENTER">
+                        <children>
+                            <ScrollPane fx:id="scrollPane" fitToHeight="true" fitToWidth="true" minViewportHeight="435.0" minViewportWidth="620.0" prefViewportHeight="845.0" prefViewportWidth="930.0" prefWidth="915.0" VBox.vgrow="ALWAYS">
+                                <content>
+                                    <FlowPane fx:id="videoGrid" styleClass="video-grid" />
+                                </content>
+                            </ScrollPane>
+                        </children>
+                        <padding>
+                            <Insets left="20.0" right="20.0" />
+                        </padding>
+                    </VBox>
+                </center>
+                <top>
+                    <HBox BorderPane.alignment="CENTER">
+                        <children>
+                            <VBox minHeight="0.0" minWidth="221.0" prefHeight="0.0" prefWidth="221.0" spacing="10.0">
+                                <children>
+                                    <HBox>
+                                        <children>
+                                            <Button fx:id="addModuleButton" minWidth="72.0" mnemonicParsing="false" onAction="#addModuleButtonOnAction" text="Add" />
+                                    <Button fx:id="removeModuleButton" minWidth="72.0" mnemonicParsing="false" onAction="#removeModuleButtonOnAction" text="Remove" />
+                                        </children>
+                                    </HBox>
+                                </children>
+                            </VBox>
+                            <Pane HBox.hgrow="ALWAYS" />
+                            <HBox fillHeight="false" maxWidth="800.0" minWidth="200.0" prefWidth="600.0">
+                                <children>
+                                    <TextField fx:id="searchBar" promptText="Type to search..." HBox.hgrow="ALWAYS" />
+                                    <ImageView fx:id="clearButton" fitHeight="24.0" fitWidth="24.0" pickOnBounds="true" preserveRatio="true" HBox.hgrow="NEVER">
+                                        <image>
+                                            <Image url="@../icons/Clear Symbol.png" />
+                                        </image>
+                                        <HBox.margin>
+                                            <Insets left="5.0" />
+                                        </HBox.margin>
+                                    </ImageView>
+                                </children>
+                            </HBox>
+                            <Pane HBox.hgrow="ALWAYS" />
+                            <Button fx:id="settingsButton" mnemonicParsing="false" prefHeight="25.0" prefWidth="25.0" styleClass="settings-button">
+                                <graphic>
+                                    <ImageView fx:id="settingIcon" fitHeight="16.0" fitWidth="16.0" pickOnBounds="true" preserveRatio="true">
+                                        <image>
+                                            <Image url="@../icons/Settings.png" />
+                                        </image>
+                                    </ImageView>
+                                </graphic>
+                            </Button>
+                     </children>
+                        <BorderPane.margin>
+                            <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+                        </BorderPane.margin>
+                    </HBox>
+                </top>
+                <right>
+    </right>
+            </BorderPane>
+         </content>
+      </Tab>
+      <Tab closable="false" text="Deadlines">
+        <content>
+          <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+        </content>
+      </Tab>
+      <Tab closable="false" text="Grades">
+        <content>
+          <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
+               <children>
+                  <BarChart layoutX="492.0" layoutY="118.0">
+                    <xAxis>
+                      <CategoryAxis side="BOTTOM" />
+                    </xAxis>
+                    <yAxis>
+                      <NumberAxis side="LEFT" />
+                    </yAxis>
+                  </BarChart>
+               </children>
+            </AnchorPane>
+        </content>
+      </Tab>
+   </tabs>
+</TabPane>
