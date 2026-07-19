@@ -24,8 +24,8 @@ public class LeistungsRechner {
         int summeBenoteteEcts = 0;
 
         for (Modul m : module) {
-            if (m.hatNote()) {
-                summeNoteEcts += m.getNote() * m.getEcts();
+            if (m.istBenotet() && m.getLeistung() != null && m.getLeistung() instanceof Pruefungsleistung) {
+                summeNoteEcts += m.getLeistung().getErreichteNote() * m.getEcts();
                 summeBenoteteEcts += m.getEcts();
             }
         }
@@ -67,7 +67,6 @@ public class LeistungsRechner {
      * Prüft, ob ein einzelnes Modul als bestanden gilt.
      */
     public boolean istBestanden(Modul m) {
-        if (m.getStatus() == ModulStatus.BESTANDEN) return true;
-        return m.hatNote() && m.getNote() <= 4.0;
+        return m.getLeistung() != null && m.getLeistung().isBestanden();
     }
 }
