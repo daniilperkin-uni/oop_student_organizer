@@ -15,6 +15,16 @@ Entwickelt unter Anwendung aller gelernten Konzepte der objektorientierten Progr
 
 ## Technologien & Architektur
 
-* **Sprache:** Java
-* **GUI-Framework:** JavaFX *(oder Swing – ggf. hier anpassen)*
+* **Sprache:** Java (JDK 21+)
+* **GUI-Framework:** JavaFX (via FXML)
+* **Build-Tool:** Maven
 * **Architektur:** Model-View-Controller (MVC) zur sauberen Trennung von Daten, Logik und Oberfläche.
+
+## Starten des Programms
+
+Um das Programm lokal auszuführen, wird Maven benötigt.
+
+```bash
+# Projekt kompilieren und ausführen
+.\mvnw.cmd clean javafx:run
+```
