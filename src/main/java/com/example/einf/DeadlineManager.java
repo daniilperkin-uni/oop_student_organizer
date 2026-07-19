@@ -9,7 +9,11 @@ public class DeadlineManager {
     private List<Deadline> deadlines;
 
     public DeadlineManager(){
-        deadlines = new ArrayList<>();
+        this.deadlines = new ArrayList<>();
+    }
+
+    public DeadlineManager(List<Deadline> deadlines){
+        this.deadlines = deadlines;
     }
 
     public void addDeadline(Deadline deadline){
