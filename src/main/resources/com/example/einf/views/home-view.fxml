@@ -29,7 +29,7 @@
                         <children>
                             <ScrollPane fx:id="scrollPane" fitToHeight="true" fitToWidth="true" minViewportHeight="435.0" minViewportWidth="620.0" prefViewportHeight="845.0" prefViewportWidth="930.0" prefWidth="915.0" VBox.vgrow="ALWAYS">
                                 <content>
-                                    <FlowPane fx:id="videoGrid" styleClass="video-grid" />
+                                    <FlowPane fx:id="moduleGrid" styleClass="video-grid" hgap="15.0" vgap="15.0" />
                                 </content>
                             </ScrollPane>
                         </children>
@@ -86,25 +86,61 @@
             </BorderPane>
          </content>
       </Tab>
-      <Tab closable="false" text="Deadlines">
+      <Tab closable="false" text="Deadlines" onSelectionChanged="#onDeadlinesTabSelected">
         <content>
-          <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0" />
+            <BorderPane prefHeight="880.0" prefWidth="1400.0">
+                <center>
+                    <VBox BorderPane.alignment="CENTER">
+                        <children>
+                            <ScrollPane fitToHeight="true" fitToWidth="true" minViewportHeight="435.0" minViewportWidth="620.0" prefViewportHeight="845.0" prefViewportWidth="930.0" prefWidth="915.0" VBox.vgrow="ALWAYS">
+                                <content>
+                                    <FlowPane fx:id="deadlineGrid" styleClass="video-grid" hgap="15.0" vgap="15.0" />
+                                </content>
+                            </ScrollPane>
+                        </children>
+                        <padding>
+                            <Insets left="20.0" right="20.0" />
+                        </padding>
+                    </VBox>
+                </center>
+                <top>
+                    <HBox BorderPane.alignment="CENTER">
+                        <children>
+                            <Button fx:id="addDeadlineButton" mnemonicParsing="false" onAction="#addDeadlineButtonOnAction" text="Add Deadline" />
+                        </children>
+                        <BorderPane.margin>
+                            <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
+                        </BorderPane.margin>
+                    </HBox>
+                </top>
+            </BorderPane>
         </content>
       </Tab>
-      <Tab closable="false" text="Grades">
+      <Tab closable="false" text="Grades" onSelectionChanged="#onGradesTabSelected">
         <content>
-          <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="180.0" prefWidth="200.0">
-               <children>
-                  <BarChart layoutX="492.0" layoutY="118.0">
-                    <xAxis>
-                      <CategoryAxis side="BOTTOM" />
-                    </xAxis>
-                    <yAxis>
-                      <NumberAxis side="LEFT" />
-                    </yAxis>
-                  </BarChart>
-               </children>
-            </AnchorPane>
+          <VBox alignment="TOP_CENTER" spacing="20">
+              <padding>
+                  <Insets top="20" right="20" bottom="20" left="20" />
+              </padding>
+              <HBox alignment="CENTER" spacing="50">
+                  <VBox alignment="CENTER" spacing="5">
+                      <javafx.scene.control.Label text="Aktueller Notendurchschnitt:" style="-fx-font-weight: bold; -fx-font-size: 16px;"/>
+                      <javafx.scene.control.Label fx:id="gpaLabel" text="0.0" style="-fx-font-size: 24px; -fx-text-fill: #2a73e8;"/>
+                  </VBox>
+                  <VBox alignment="CENTER" spacing="5">
+                      <javafx.scene.control.Label text="Erreichte ECTS:" style="-fx-font-weight: bold; -fx-font-size: 16px;"/>
+                      <javafx.scene.control.Label fx:id="ectsLabel" text="0 / 0" style="-fx-font-size: 24px; -fx-text-fill: #34a853;"/>
+                  </VBox>
+              </HBox>
+              <BarChart fx:id="gradesChart" prefHeight="400.0" prefWidth="600.0">
+                <xAxis>
+                  <CategoryAxis side="BOTTOM" label="Module"/>
+                </xAxis>
+                <yAxis>
+                  <NumberAxis side="LEFT" label="Note" upperBound="5.0" tickUnit="1.0"/>
+                </yAxis>
+              </BarChart>
+          </VBox>
         </content>
       </Tab>
    </tabs>

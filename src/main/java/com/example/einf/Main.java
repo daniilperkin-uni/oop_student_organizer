@@ -22,6 +22,15 @@ public class Main extends Application {
 
 		FXMLLoader fxmlLoader = new FXMLLoader(Main.class.getResource("/com/example/einf/views/home-view.fxml"));
 		Scene scene = new Scene(fxmlLoader.load());
+		
+		HomeController controller = fxmlLoader.getController();
+		
+		ModulVerwaltung modulVerwaltung = new ModulVerwaltung(speicherManager.getModule());
+		controller.setModulVerwaltung(modulVerwaltung);
+		
+		DeadlineManager deadlineManager = new DeadlineManager(speicherManager.getDeadlines());
+		controller.setDeadlineManager(deadlineManager);
+		
 		stage.setTitle("Studentischer Organisationshelfer");
 		stage.setScene(scene);
 		stage.sizeToScene();
