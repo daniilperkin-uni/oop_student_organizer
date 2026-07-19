@@ -85,13 +85,31 @@ public class SpeicherManager {
 
     private void schreibeModule() throws IOException {
         try (BufferedWriter writer = Files.newBufferedWriter(modulPfad, StandardCharsets.UTF_8)) {
-            writer.write("name;ects;status;note");
+            writer.write("id;name;ects;istBenotet;semester;leistungTyp;bestanden;note");
             writer.newLine();
             for (Modul m : module) {
-                writer.write(escapeCsv(m.getName())
+                String lTyp = "KEINE";
+                String bestanden = "false";
+                String note = "0.0";
+                
+                if (m.getLeistung() != null) {
+                    if (m.getLeistung() instanceof Pruefungsleistung) {
+                        lTyp = "PRUEFUNG";
+                        note = String.valueOf(m.getLeistung().getErreichteNote());
+                    } else if (m.getLeistung() instanceof Studienleistung) {
+                        lTyp = "STUDIEN";
+                        bestanden = String.valueOf(m.getLeistung().isBestanden());
+                    }
+                }
+
+                writer.write(escapeCsv(m.getId())
+                        + TRENNZEICHEN + escapeCsv(m.getName())
                         + TRENNZEICHEN + m.getEcts()
-                        + TRENNZEICHEN + m.getStatus().name()
-                        + TRENNZEICHEN + m.getNote());
+                        + TRENNZEICHEN + m.istBenotet()
+                        + TRENNZEICHEN + (m.getSemester() != null ? m.getSemester().name() : "NULL")
+                        + TRENNZEICHEN + lTyp
+                        + TRENNZEICHEN + bestanden
+                        + TRENNZEICHEN + note);
                 writer.newLine();
             }
         }
@@ -118,12 +136,41 @@ public class SpeicherManager {
             while ((zeile = reader.readLine()) != null) {
                 if (zeile.isBlank()) continue;
                 String[] teile = zeile.split(TRENNZEICHEN, -1);
-                if (teile.length < 4) continue;
-                String name = unescapeCsv(teile[0]);
-                int ects = Integer.parseInt(teile[1].trim());
-                ModulStatus status = ModulStatus.valueOf(teile[2].trim());
-                double note = Double.parseDouble(teile[3].trim());
-                module.add(new Modul(name, ects, status, note));
+                // Kompatibilität: falls alte Datei
+                if (teile.length == 4) {
+                    String name = unescapeCsv(teile[0]);
+                    int ects = Integer.parseInt(teile[1].trim());
+                    ModulStatus status = ModulStatus.valueOf(teile[2].trim());
+                    double note = Double.parseDouble(teile[3].trim());
+                    Modul m = new Modul(name, ects, note > 0.0, null);
+                    if (note > 0.0 || status == ModulStatus.BESTANDEN) {
+                        if (m.istBenotet()) {
+                            m.setLeistung(new Pruefungsleistung(m, note));
+                        } else {
+                            m.setLeistung(new Studienleistung(m, status == ModulStatus.BESTANDEN));
+                        }
+                    }
+                    module.add(m);
+                } else if (teile.length >= 8) {
+                    String id = unescapeCsv(teile[0]);
+                    String name = unescapeCsv(teile[1]);
+                    int ects = Integer.parseInt(teile[2].trim());
+                    boolean istBenotet = Boolean.parseBoolean(teile[3].trim());
+                    String semesterStr = teile[4].trim();
+                    Semester semester = semesterStr.equals("NULL") ? null : Semester.valueOf(semesterStr);
+                    
+                    Modul m = new Modul(id, name, ects, istBenotet, semester);
+                    
+                    String lTyp = teile[5].trim();
+                    if (lTyp.equals("PRUEFUNG")) {
+                        double note = Double.parseDouble(teile[7].trim());
+                        m.setLeistung(new Pruefungsleistung(m, note));
+                    } else if (lTyp.equals("STUDIEN")) {
+                        boolean bestanden = Boolean.parseBoolean(teile[6].trim());
+                        m.setLeistung(new Studienleistung(m, bestanden));
+                    }
+                    module.add(m);
+                }
             }
         } catch (NoSuchFileException e) {
             // Datei existiert noch nicht – kein Fehler beim ersten Start
