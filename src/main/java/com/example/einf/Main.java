@@ -6,6 +6,7 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 
 import java.io.IOException;
+import java.util.Objects;
 
 public class Main extends Application {
 
@@ -13,7 +14,6 @@ public class Main extends Application {
 
 	@Override
 	public void start(Stage stage) throws IOException {
-		// Gespeicherte Daten beim Programmstart laden
 		try {
 			speicherManager.ladeDaten();
 		} catch (IOException e) {
@@ -22,24 +22,29 @@ public class Main extends Application {
 
 		FXMLLoader fxmlLoader = new FXMLLoader(Main.class.getResource("/com/example/einf/views/home-view.fxml"));
 		Scene scene = new Scene(fxmlLoader.load());
-		
+		scene.getStylesheets().add(
+				Objects.requireNonNull(Main.class.getResource("/com/example/einf/styles/app.css")).toExternalForm());
+
 		HomeController controller = fxmlLoader.getController();
-		
+
 		ModulVerwaltung modulVerwaltung = new ModulVerwaltung(speicherManager.getModule());
 		controller.setModulVerwaltung(modulVerwaltung);
-		
+
 		DeadlineManager deadlineManager = new DeadlineManager(speicherManager.getDeadlines());
 		controller.setDeadlineManager(deadlineManager);
-		
+
+		controller.setSpeicherManager(speicherManager);
+		controller.initializeSearch();
+
 		stage.setTitle("Studentischer Organisationshelfer");
 		stage.setScene(scene);
-		stage.sizeToScene();
+		stage.setMinWidth(800);
+		stage.setMinHeight(600);
 		stage.show();
 	}
 
 	@Override
 	public void stop() {
-		// Daten beim Schließen des Programms sichern
 		try {
 			speicherManager.speichereDaten();
 		} catch (IOException e) {

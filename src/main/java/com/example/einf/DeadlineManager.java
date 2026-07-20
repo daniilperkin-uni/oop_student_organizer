@@ -51,4 +51,16 @@ public class DeadlineManager {
         ueberfaellig.sort(Comparator.comparing(Deadline::getDatum));
         return ueberfaellig;
     }
+
+    public List<Deadline> getAllDeadlinesSortiert() {
+        List<Deadline> sortiert = new ArrayList<>(deadlines);
+        sortiert.sort(Comparator
+                .comparingInt((Deadline d) -> switch (d.getStatus()) {
+                    case UEBERFAELLIG -> 0;
+                    case OFFEN -> 1;
+                    case ERLEDIGT -> 2;
+                })
+                .thenComparing(Deadline::getDatum));
+        return sortiert;
+    }
 }

@@ -5,31 +5,28 @@
 <?import javafx.scene.chart.CategoryAxis?>
 <?import javafx.scene.chart.NumberAxis?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TextField?>
-<?import javafx.scene.image.Image?>
-<?import javafx.scene.image.ImageView?>
-<?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.FlowPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Pane?>
 <?import javafx.scene.layout.VBox?>
 
-
 <TabPane xmlns="http://javafx.com/javafx/26" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.einf.HomeController">
    <tabs>
-      <Tab closable="false" text="Modules">
+      <Tab closable="false" text="Module">
          <content>
             <BorderPane prefHeight="880.0" prefWidth="1400.0">
                 <center>
                     <VBox BorderPane.alignment="CENTER">
                         <children>
-                            <ScrollPane fx:id="scrollPane" fitToHeight="true" fitToWidth="true" minViewportHeight="435.0" minViewportWidth="620.0" prefViewportHeight="845.0" prefViewportWidth="930.0" prefWidth="915.0" VBox.vgrow="ALWAYS">
+                            <ScrollPane fitToHeight="true" fitToWidth="true" minViewportHeight="435.0" minViewportWidth="620.0" prefViewportHeight="845.0" prefViewportWidth="930.0" prefWidth="915.0" VBox.vgrow="ALWAYS">
                                 <content>
-                                    <FlowPane fx:id="moduleGrid" styleClass="video-grid" hgap="15.0" vgap="15.0" />
+                                    <FlowPane fx:id="moduleGrid" styleClass="card-grid" hgap="15.0" vgap="15.0" />
                                 </content>
                             </ScrollPane>
                         </children>
@@ -39,54 +36,26 @@
                     </VBox>
                 </center>
                 <top>
-                    <HBox BorderPane.alignment="CENTER">
+                    <HBox BorderPane.alignment="CENTER" spacing="10">
                         <children>
-                            <VBox minHeight="0.0" minWidth="221.0" prefHeight="0.0" prefWidth="221.0" spacing="10.0">
-                                <children>
-                                    <HBox>
-                                        <children>
-                                            <Button fx:id="addModuleButton" minWidth="72.0" mnemonicParsing="false" onAction="#addModuleButtonOnAction" text="Add" />
-                                    <Button fx:id="removeModuleButton" minWidth="72.0" mnemonicParsing="false" onAction="#removeModuleButtonOnAction" text="Remove" />
-                                        </children>
-                                    </HBox>
-                                </children>
-                            </VBox>
+                            <Button fx:id="addModuleButton" minWidth="120.0" mnemonicParsing="false" onAction="#addModuleButtonOnAction" text="Modul hinzufügen" />
                             <Pane HBox.hgrow="ALWAYS" />
-                            <HBox fillHeight="false" maxWidth="800.0" minWidth="200.0" prefWidth="600.0">
+                            <HBox fillHeight="false" maxWidth="800.0" minWidth="200.0" prefWidth="600.0" spacing="5">
                                 <children>
-                                    <TextField fx:id="searchBar" promptText="Type to search..." HBox.hgrow="ALWAYS" />
-                                    <ImageView fx:id="clearButton" fitHeight="24.0" fitWidth="24.0" pickOnBounds="true" preserveRatio="true" HBox.hgrow="NEVER">
-                                        <image>
-                                            <Image url="@../icons/Clear Symbol.png" />
-                                        </image>
-                                        <HBox.margin>
-                                            <Insets left="5.0" />
-                                        </HBox.margin>
-                                    </ImageView>
+                                    <TextField fx:id="searchBar" promptText="Module suchen..." HBox.hgrow="ALWAYS" />
+                                    <Button fx:id="clearSearchButton" mnemonicParsing="false" onAction="#clearSearchButtonOnAction" styleClass="search-clear" text="✕" />
                                 </children>
                             </HBox>
-                            <Pane HBox.hgrow="ALWAYS" />
-                            <Button fx:id="settingsButton" mnemonicParsing="false" prefHeight="25.0" prefWidth="25.0" styleClass="settings-button">
-                                <graphic>
-                                    <ImageView fx:id="settingIcon" fitHeight="16.0" fitWidth="16.0" pickOnBounds="true" preserveRatio="true">
-                                        <image>
-                                            <Image url="@../icons/Settings.png" />
-                                        </image>
-                                    </ImageView>
-                                </graphic>
-                            </Button>
-                     </children>
+                        </children>
                         <BorderPane.margin>
                             <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
                         </BorderPane.margin>
                     </HBox>
                 </top>
-                <right>
-    </right>
             </BorderPane>
          </content>
       </Tab>
-      <Tab closable="false" text="Deadlines" onSelectionChanged="#onDeadlinesTabSelected">
+      <Tab closable="false" text="Fristen" onSelectionChanged="#onDeadlinesTabSelected">
         <content>
             <BorderPane prefHeight="880.0" prefWidth="1400.0">
                 <center>
@@ -94,7 +63,7 @@
                         <children>
                             <ScrollPane fitToHeight="true" fitToWidth="true" minViewportHeight="435.0" minViewportWidth="620.0" prefViewportHeight="845.0" prefViewportWidth="930.0" prefWidth="915.0" VBox.vgrow="ALWAYS">
                                 <content>
-                                    <FlowPane fx:id="deadlineGrid" styleClass="video-grid" hgap="15.0" vgap="15.0" />
+                                    <FlowPane fx:id="deadlineGrid" styleClass="card-grid" hgap="15.0" vgap="15.0" />
                                 </content>
                             </ScrollPane>
                         </children>
@@ -106,7 +75,7 @@
                 <top>
                     <HBox BorderPane.alignment="CENTER">
                         <children>
-                            <Button fx:id="addDeadlineButton" mnemonicParsing="false" onAction="#addDeadlineButtonOnAction" text="Add Deadline" />
+                            <Button fx:id="addDeadlineButton" mnemonicParsing="false" onAction="#addDeadlineButtonOnAction" text="Frist hinzufügen" />
                         </children>
                         <BorderPane.margin>
                             <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
@@ -116,7 +85,7 @@
             </BorderPane>
         </content>
       </Tab>
-      <Tab closable="false" text="Grades" onSelectionChanged="#onGradesTabSelected">
+      <Tab closable="false" text="Noten" onSelectionChanged="#onGradesTabSelected">
         <content>
           <VBox alignment="TOP_CENTER" spacing="20">
               <padding>
@@ -124,12 +93,12 @@
               </padding>
               <HBox alignment="CENTER" spacing="50">
                   <VBox alignment="CENTER" spacing="5">
-                      <javafx.scene.control.Label text="Aktueller Notendurchschnitt:" style="-fx-font-weight: bold; -fx-font-size: 16px;"/>
-                      <javafx.scene.control.Label fx:id="gpaLabel" text="0.0" style="-fx-font-size: 24px; -fx-text-fill: #2a73e8;"/>
+                      <Label text="Aktueller Notendurchschnitt:" styleClass="stat-label"/>
+                      <Label fx:id="gpaLabel" text="0.0" styleClass="stat-value, stat-value-gpa"/>
                   </VBox>
                   <VBox alignment="CENTER" spacing="5">
-                      <javafx.scene.control.Label text="Erreichte ECTS:" style="-fx-font-weight: bold; -fx-font-size: 16px;"/>
-                      <javafx.scene.control.Label fx:id="ectsLabel" text="0 / 0" style="-fx-font-size: 24px; -fx-text-fill: #34a853;"/>
+                      <Label text="Erreichte ECTS:" styleClass="stat-label"/>
+                      <Label fx:id="ectsLabel" text="0 / 0" styleClass="stat-value, stat-value-ects"/>
                   </VBox>
               </HBox>
               <BarChart fx:id="gradesChart" prefHeight="400.0" prefWidth="600.0">

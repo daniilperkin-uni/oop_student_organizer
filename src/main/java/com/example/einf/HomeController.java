@@ -12,13 +12,12 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
+import java.io.IOException;
 import java.time.LocalDate;
+import java.util.Locale;
 import java.util.Optional;
 
 public class HomeController {
-
-    @FXML
-    private Label welcomeText;
 
     @FXML
     private FlowPane moduleGrid;
@@ -35,8 +34,13 @@ public class HomeController {
     @FXML
     private BarChart<String, Number> gradesChart;
 
+    @FXML
+    private TextField searchBar;
+
     private ModulVerwaltung modulVerwaltung;
     private DeadlineManager deadlineManager;
+    private SpeicherManager speicherManager;
+    private String searchQuery = "";
 
     public void setModulVerwaltung(ModulVerwaltung modulVerwaltung) {
         this.modulVerwaltung = modulVerwaltung;
@@ -47,46 +51,139 @@ public class HomeController {
         this.deadlineManager = deadlineManager;
     }
 
+    public void setSpeicherManager(SpeicherManager speicherManager) {
+        this.speicherManager = speicherManager;
+    }
+
+    public void initializeSearch() {
+        if (searchBar != null) {
+            searchBar.textProperty().addListener((obs, oldVal, newVal) -> {
+                searchQuery = newVal == null ? "" : newVal.trim().toLowerCase(Locale.GERMAN);
+                refreshModuleGrid();
+            });
+        }
+    }
+
+    @FXML
+    public void clearSearchButtonOnAction(ActionEvent actionEvent) {
+        if (searchBar != null) {
+            searchBar.clear();
+        }
+    }
+
+    private void speichereAenderungen() {
+        if (speicherManager == null) return;
+        try {
+            speicherManager.speichereDaten();
+        } catch (IOException e) {
+            zeigeFehler("Speicherfehler", "Die Daten konnten nicht gespeichert werden.", e.getMessage());
+        }
+    }
+
+    private void zeigeFehler(String titel, String header, String inhalt) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle(titel);
+        alert.setHeaderText(header);
+        alert.setContentText(inhalt);
+        alert.showAndWait();
+    }
+
+    private boolean bestaetigeLoeschen(String modulName) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setTitle("Modul löschen");
+        alert.setHeaderText("Modul wirklich löschen?");
+        alert.setContentText("Möchten Sie \"" + modulName + "\" endgültig entfernen?");
+        return alert.showAndWait().filter(ButtonType.OK::equals).isPresent();
+    }
+
     private void refreshModuleGrid() {
         if (moduleGrid == null || modulVerwaltung == null) return;
         moduleGrid.getChildren().clear();
 
         for (Modul m : modulVerwaltung.getModule()) {
-            VBox card = new VBox(5);
-            card.setPadding(new Insets(10));
-            card.setStyle("-fx-border-color: lightgray; -fx-border-radius: 5; -fx-background-color: white; -fx-background-radius: 5;");
-            card.setPrefWidth(200);
+            if (!matchesSearch(m)) continue;
+            moduleGrid.getChildren().add(createModuleCard(m));
+        }
+    }
 
-            Label nameLabel = new Label(m.getName());
-            nameLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
+    private boolean matchesSearch(Modul m) {
+        if (searchQuery.isEmpty()) return true;
+        if (m.getName().toLowerCase(Locale.GERMAN).contains(searchQuery)) return true;
+        if (m.getSemester() != null && m.getSemester().getBezeichnung().toLowerCase(Locale.GERMAN).contains(searchQuery)) {
+            return true;
+        }
+        return m.getSemester() != null && m.getSemester().name().toLowerCase(Locale.GERMAN).contains(searchQuery);
+    }
 
-            Label ectsLabel = new Label(m.getEcts() + " ECTS");
-            Label semLabel = new Label(m.getSemester() != null ? m.getSemester().name() : "Kein Semester");
-            
-            String leistungInfo = "Keine Leistung";
-            if (m.getLeistung() instanceof Pruefungsleistung p) {
-                leistungInfo = "Note: " + p.getErreichteNote() + (p.isBestanden() ? " (Bestanden)" : " (Nicht bestanden)");
-            } else if (m.getLeistung() instanceof Studienleistung s) {
-                leistungInfo = "Studienleistung: " + (s.isBestanden() ? "Bestanden" : "Nicht bestanden");
-            }
-            Label leistungLabel = new Label(leistungInfo);
+    private VBox createModuleCard(Modul m) {
+        VBox card = new VBox(5);
+        card.getStyleClass().add("card");
 
-            Button deleteBtn = new Button("Löschen");
-            deleteBtn.setStyle("-fx-text-fill: red;");
-            deleteBtn.setOnAction(e -> {
+        Label nameLabel = new Label(m.getName());
+        nameLabel.getStyleClass().add("card-title");
+
+        Label ectsLabel = new Label(m.getEcts() + " ECTS");
+        ectsLabel.getStyleClass().add("card-subtitle");
+
+        String semesterText = m.getSemester() != null ? m.getSemester().getBezeichnung() : "Kein Semester";
+        Label semLabel = new Label(semesterText);
+        semLabel.getStyleClass().add("card-subtitle");
+
+        Label leistungLabel = new Label(formatLeistungInfo(m));
+        leistungLabel.getStyleClass().add("card-subtitle");
+
+        HBox buttonBar = new HBox(8);
+        buttonBar.getStyleClass().add("button-bar");
+
+        Button editBtn = new Button("Bearbeiten");
+        editBtn.setOnAction(e -> bearbeiteModul(m));
+
+        Button deleteBtn = new Button("Löschen");
+        deleteBtn.getStyleClass().add("btn-delete");
+        deleteBtn.setOnAction(e -> {
+            if (bestaetigeLoeschen(m.getName())) {
                 modulVerwaltung.deleteModul(m.getId());
                 refreshModuleGrid();
-            });
+                speichereAenderungen();
+            }
+        });
 
-            card.getChildren().addAll(nameLabel, ectsLabel, semLabel, leistungLabel, deleteBtn);
-            moduleGrid.getChildren().add(card);
+        buttonBar.getChildren().addAll(editBtn, deleteBtn);
+        card.getChildren().addAll(nameLabel, ectsLabel, semLabel, leistungLabel, buttonBar);
+        return card;
+    }
+
+    private String formatLeistungInfo(Modul m) {
+        if (m.getLeistung() instanceof Pruefungsleistung p) {
+            return "Note: " + p.getErreichteNote() + (p.isBestanden() ? " (Bestanden)" : " (Nicht bestanden)");
         }
+        if (m.getLeistung() instanceof Studienleistung s) {
+            return "Studienleistung: " + (s.isBestanden() ? "Bestanden" : "Nicht bestanden");
+        }
+        return "Keine Leistung";
     }
 
     @FXML
     public void addModuleButtonOnAction(ActionEvent actionEvent) {
+        showModulDialog(null).ifPresent(m -> {
+            modulVerwaltung.addModul(m);
+            refreshModuleGrid();
+            speichereAenderungen();
+        });
+    }
+
+    private void bearbeiteModul(Modul existing) {
+        showModulDialog(existing).ifPresent(updated -> {
+            modulVerwaltung.updateModul(updated);
+            refreshModuleGrid();
+            speichereAenderungen();
+        });
+    }
+
+    private Optional<Modul> showModulDialog(Modul existing) {
+        boolean isEdit = existing != null;
         Dialog<Modul> dialog = new Dialog<>();
-        dialog.setTitle("Neues Modul hinzufügen");
+        dialog.setTitle(isEdit ? "Modul bearbeiten" : "Neues Modul hinzufügen");
         dialog.setHeaderText("Bitte Moduldetails eingeben:");
 
         ButtonType saveButtonType = new ButtonType("Speichern", ButtonBar.ButtonData.OK_DONE);
@@ -100,7 +197,7 @@ public class HomeController {
         TextField nameField = new TextField();
         nameField.setPromptText("Modulname");
         TextField ectsField = new TextField();
-        ectsField.setPromptText("ECTS (z.B. 5)");
+        ectsField.setPromptText("ECTS (z. B. 5)");
         ComboBox<Semester> semesterBox = new ComboBox<>();
         semesterBox.getItems().addAll(Semester.values());
         CheckBox benotetBox = new CheckBox("Ist benotet?");
@@ -110,30 +207,53 @@ public class HomeController {
         leistungTypeBox.setValue("Keine");
 
         TextField noteField = new TextField();
-        noteField.setPromptText("Note (z.B. 1.3)");
+        noteField.setPromptText("Note (z. B. 1,3)");
         noteField.setDisable(true);
 
         CheckBox bestandenBox = new CheckBox("Bestanden");
         bestandenBox.setDisable(true);
 
+        if (isEdit) {
+            nameField.setText(existing.getName());
+            ectsField.setText(String.valueOf(existing.getEcts()));
+            semesterBox.setValue(existing.getSemester());
+            benotetBox.setSelected(existing.istBenotet());
+            if (existing.getLeistung() instanceof Pruefungsleistung p) {
+                leistungTypeBox.setValue("Prüfungsleistung");
+                noteField.setText(String.valueOf(p.getErreichteNote()));
+                noteField.setDisable(false);
+            } else if (existing.getLeistung() instanceof Studienleistung s) {
+                leistungTypeBox.setValue("Studienleistung");
+                bestandenBox.setSelected(s.isBestanden());
+                bestandenBox.setDisable(false);
+            }
+        }
+
+        final boolean[] syncing = {false};
+
         leistungTypeBox.valueProperty().addListener((obs, oldVal, newVal) -> {
-            noteField.setDisable(!newVal.equals("Prüfungsleistung"));
-            bestandenBox.setDisable(!newVal.equals("Studienleistung"));
-            
-            // Keep benotetBox in sync if the user manually changes the dropdown
-            if (newVal.equals("Prüfungsleistung") && !benotetBox.isSelected()) {
+            noteField.setDisable(!"Prüfungsleistung".equals(newVal));
+            bestandenBox.setDisable(!"Studienleistung".equals(newVal));
+            if (syncing[0]) return;
+            syncing[0] = true;
+            if ("Prüfungsleistung".equals(newVal)) {
                 benotetBox.setSelected(true);
-            } else if (newVal.equals("Studienleistung") && benotetBox.isSelected()) {
+            } else if ("Studienleistung".equals(newVal)) {
                 benotetBox.setSelected(false);
             }
+            syncing[0] = false;
         });
 
         benotetBox.selectedProperty().addListener((obs, oldVal, isBenotet) -> {
-            if (isBenotet) {
+            if (syncing[0]) return;
+            syncing[0] = true;
+            String current = leistungTypeBox.getValue();
+            if (isBenotet && !"Prüfungsleistung".equals(current)) {
                 leistungTypeBox.setValue("Prüfungsleistung");
-            } else {
-                leistungTypeBox.setValue("Studienleistung");
+            } else if (!isBenotet && "Prüfungsleistung".equals(current)) {
+                leistungTypeBox.setValue("Keine");
             }
+            syncing[0] = false;
         });
 
         grid.add(new Label("Name:"), 0, 0);
@@ -151,52 +271,52 @@ public class HomeController {
 
         dialog.getDialogPane().setContent(grid);
 
-        dialog.setResultConverter(dialogButton -> {
-            if (dialogButton == saveButtonType) {
-                try {
-                    String name = nameField.getText();
-                    int ects = Integer.parseInt(ectsField.getText());
-                    boolean istBenotet = benotetBox.isSelected();
-                    Semester semester = semesterBox.getValue();
-
-                    Modul m = new Modul(name, ects, istBenotet, semester);
-
-                    String lType = leistungTypeBox.getValue();
-                    if (lType.equals("Prüfungsleistung")) {
-                        double note = Double.parseDouble(noteField.getText());
-                        m.setLeistung(new Pruefungsleistung(m, note));
-                    } else if (lType.equals("Studienleistung")) {
-                        m.setLeistung(new Studienleistung(m, bestandenBox.isSelected()));
-                    }
-
-                    return m;
-                } catch (Exception ex) {
-                    Alert alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setTitle("Eingabefehler");
-                    alert.setHeaderText("Fehlerhafte Eingabe");
-                    alert.setContentText("Bitte prüfen Sie Ihre Eingaben (z.B. Zahlen bei ECTS und Note).");
-                    alert.showAndWait();
+        Button saveButton = (Button) dialog.getDialogPane().lookupButton(saveButtonType);
+        saveButton.addEventFilter(ActionEvent.ACTION, event -> {
+            Optional<String> nameError = EingabeValidierung.validiereModulName(nameField.getText());
+            if (nameError.isPresent()) {
+                zeigeFehler("Eingabefehler", "Fehlerhafte Eingabe", nameError.get());
+                event.consume();
+                return;
+            }
+            Optional<String> ectsError = EingabeValidierung.validiereEcts(ectsField.getText());
+            if (ectsError.isPresent()) {
+                zeigeFehler("Eingabefehler", "Fehlerhafte Eingabe", ectsError.get());
+                event.consume();
+                return;
+            }
+            if ("Prüfungsleistung".equals(leistungTypeBox.getValue())) {
+                Optional<String> noteError = EingabeValidierung.validiereNote(noteField.getText());
+                if (noteError.isPresent()) {
+                    zeigeFehler("Eingabefehler", "Fehlerhafte Eingabe", noteError.get());
+                    event.consume();
                 }
             }
-            return null;
         });
 
-        Optional<Modul> result = dialog.showAndWait();
-        result.ifPresent(m -> {
-            if (modulVerwaltung != null) {
-                modulVerwaltung.addModul(m);
-                refreshModuleGrid();
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton != saveButtonType) return null;
+
+            String name = nameField.getText().trim();
+            int ects = Integer.parseInt(ectsField.getText().trim());
+            boolean istBenotet = benotetBox.isSelected();
+            Semester semester = semesterBox.getValue();
+            String lType = leistungTypeBox.getValue();
+
+            Modul m = isEdit
+                    ? new Modul(existing.getId(), name, ects, istBenotet, semester)
+                    : new Modul(name, ects, istBenotet, semester);
+
+            if ("Prüfungsleistung".equals(lType)) {
+                m.setLeistung(new Pruefungsleistung(m, EingabeValidierung.parseNote(noteField.getText())));
+            } else if ("Studienleistung".equals(lType)) {
+                m.setLeistung(new Studienleistung(m, bestandenBox.isSelected()));
             }
-        });
-    }
 
-    @FXML
-    public void removeModuleButtonOnAction(ActionEvent actionEvent) {
-        Alert info = new Alert(Alert.AlertType.INFORMATION);
-        info.setTitle("Info");
-        info.setHeaderText(null);
-        info.setContentText("Bitte nutzen Sie den Löschen-Button direkt auf der Modulkarte.");
-        info.showAndWait();
+            return m;
+        });
+
+        return dialog.showAndWait();
     }
 
     @FXML
@@ -210,49 +330,103 @@ public class HomeController {
         if (deadlineGrid == null || deadlineManager == null) return;
         deadlineGrid.getChildren().clear();
 
-        for (Deadline d : deadlineManager.getAnstehendeDeadlines()) {
-            addDeadlineCard(d);
+        for (Deadline d : deadlineManager.getAllDeadlinesSortiert()) {
+            deadlineGrid.getChildren().add(createDeadlineCard(d));
         }
-        for (Deadline d : deadlineManager.getUeberfaelligeDeadlines()) {
-            addDeadlineCard(d);
-        }
-        // Could also show erledigt if needed, but getAnstehende filters them out.
     }
 
-    private void addDeadlineCard(Deadline d) {
+    private VBox createDeadlineCard(Deadline d) {
         VBox card = new VBox(5);
-        card.setPadding(new Insets(10));
-        card.setPrefWidth(200);
-
-        String borderColor = "lightgray";
-        if (d.getStatus() == DeadlineStatus.UEBERFAELLIG) borderColor = "red";
-        else if (d.getStatus() == DeadlineStatus.ERLEDIGT) borderColor = "green";
-        else if (d.getStatus() == DeadlineStatus.OFFEN) borderColor = "orange";
-
-        card.setStyle("-fx-border-color: " + borderColor + "; -fx-border-width: 2; -fx-border-radius: 5; -fx-background-color: white; -fx-background-radius: 5;");
+        card.getStyleClass().addAll("card", statusStyleClass(d.getStatus()));
 
         Label nameLabel = new Label(d.getTitel());
-        nameLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 14px;");
+        nameLabel.getStyleClass().add("card-title");
 
-        Label dateLabel = new Label("Datum: " + d.getDatum().toString());
-        Label statusLabel = new Label("Status: " + d.getStatus().name());
+        Label dateLabel = new Label("Datum: " + d.getDatum());
+        dateLabel.getStyleClass().add("card-subtitle");
 
-        Button doneBtn = new Button("Mark as Done");
+        Label typLabel = new Label("Typ: " + formatDeadlineTyp(d.getTyp()));
+        typLabel.getStyleClass().add("card-subtitle");
+
+        String modulText = d.getModulName() != null && !d.getModulName().isBlank()
+                ? d.getModulName()
+                : "Kein Modul verknüpft";
+        Label modulLabel = new Label("Modul: " + modulText);
+        modulLabel.getStyleClass().add("card-subtitle");
+
+        Label statusLabel = new Label("Status: " + formatDeadlineStatus(d.getStatus()));
+        statusLabel.getStyleClass().add("card-subtitle");
+
+        HBox buttonBar = new HBox(8);
+        buttonBar.getStyleClass().add("button-bar");
+
+        Button editBtn = new Button("Bearbeiten");
+        editBtn.setOnAction(e -> bearbeiteDeadline(d));
+
+        Button doneBtn = new Button("Erledigt");
+        doneBtn.getStyleClass().add("btn-done");
         doneBtn.setOnAction(e -> {
             deadlineManager.markAsErledigt(d);
             refreshDeadlineGrid();
+            speichereAenderungen();
         });
         doneBtn.setDisable(d.istErledigt());
 
-        card.getChildren().addAll(nameLabel, dateLabel, statusLabel, doneBtn);
-        deadlineGrid.getChildren().add(card);
+        buttonBar.getChildren().addAll(editBtn, doneBtn);
+        card.getChildren().addAll(nameLabel, dateLabel, typLabel, modulLabel, statusLabel, buttonBar);
+        return card;
+    }
+
+    private String statusStyleClass(DeadlineStatus status) {
+        return switch (status) {
+            case UEBERFAELLIG -> "status-ueberfaellig";
+            case ERLEDIGT -> "status-erledigt";
+            case OFFEN -> "status-offen";
+        };
+    }
+
+    private String formatDeadlineStatus(DeadlineStatus status) {
+        return switch (status) {
+            case UEBERFAELLIG -> "Überfällig";
+            case ERLEDIGT -> "Erledigt";
+            case OFFEN -> "Offen";
+        };
+    }
+
+    private String formatDeadlineTyp(DeadlineTyp typ) {
+        if (typ == null) return "Unbekannt";
+        return switch (typ) {
+            case ANMELDUNG -> "Anmeldung";
+            case ABGABE -> "Abgabe";
+            case KLAUSUR -> "Klausur";
+        };
     }
 
     @FXML
     public void addDeadlineButtonOnAction(ActionEvent actionEvent) {
+        showDeadlineDialog(null).ifPresent(d -> {
+            deadlineManager.addDeadline(d);
+            refreshDeadlineGrid();
+            speichereAenderungen();
+        });
+    }
+
+    private void bearbeiteDeadline(Deadline existing) {
+        showDeadlineDialog(existing).ifPresent(updated -> {
+            existing.setBeschreibung(updated.getBeschreibung());
+            existing.setDatum(updated.getDatum());
+            existing.setTyp(updated.getTyp());
+            existing.setModulName(updated.getModulName());
+            refreshDeadlineGrid();
+            speichereAenderungen();
+        });
+    }
+
+    private Optional<Deadline> showDeadlineDialog(Deadline existing) {
+        boolean isEdit = existing != null;
         Dialog<Deadline> dialog = new Dialog<>();
-        dialog.setTitle("Neue Deadline hinzufügen");
-        dialog.setHeaderText("Bitte Deadlinedetails eingeben:");
+        dialog.setTitle(isEdit ? "Frist bearbeiten" : "Neue Frist hinzufügen");
+        dialog.setHeaderText("Bitte Fristdetails eingeben:");
 
         ButtonType saveButtonType = new ButtonType("Speichern", ButtonBar.ButtonData.OK_DONE);
         dialog.getDialogPane().getButtonTypes().addAll(saveButtonType, ButtonType.CANCEL);
@@ -264,16 +438,23 @@ public class HomeController {
 
         TextField beschreibungField = new TextField();
         beschreibungField.setPromptText("Titel / Beschreibung");
-        
+
         DatePicker datePicker = new DatePicker();
         datePicker.setValue(LocalDate.now());
 
         ComboBox<DeadlineTyp> typBox = new ComboBox<>();
         typBox.getItems().addAll(DeadlineTyp.values());
-        if (DeadlineTyp.values().length > 0) typBox.setValue(DeadlineTyp.values()[0]);
+        typBox.setValue(DeadlineTyp.ANMELDUNG);
 
         TextField modulNameField = new TextField();
         modulNameField.setPromptText("Modulname (optional)");
+
+        if (isEdit) {
+            beschreibungField.setText(existing.getBeschreibung());
+            datePicker.setValue(existing.getDatum());
+            typBox.setValue(existing.getTyp());
+            modulNameField.setText(existing.getModulName());
+        }
 
         grid.add(new Label("Beschreibung:"), 0, 0);
         grid.add(beschreibungField, 1, 0);
@@ -286,20 +467,32 @@ public class HomeController {
 
         dialog.getDialogPane().setContent(grid);
 
-        dialog.setResultConverter(dialogButton -> {
-            if (dialogButton == saveButtonType) {
-                return new Deadline(beschreibungField.getText(), datePicker.getValue(), typBox.getValue(), modulNameField.getText());
+        Button saveButton = (Button) dialog.getDialogPane().lookupButton(saveButtonType);
+        saveButton.addEventFilter(ActionEvent.ACTION, event -> {
+            Optional<String> beschreibungError = EingabeValidierung.validiereDeadlineBeschreibung(beschreibungField.getText());
+            if (beschreibungError.isPresent()) {
+                zeigeFehler("Eingabefehler", "Fehlerhafte Eingabe", beschreibungError.get());
+                event.consume();
+                return;
             }
-            return null;
+            Optional<String> datumError = EingabeValidierung.validiereDatum(datePicker.getValue());
+            if (datumError.isPresent()) {
+                zeigeFehler("Eingabefehler", "Fehlerhafte Eingabe", datumError.get());
+                event.consume();
+            }
         });
 
-        Optional<Deadline> result = dialog.showAndWait();
-        result.ifPresent(d -> {
-            if (deadlineManager != null) {
-                deadlineManager.addDeadline(d);
-                refreshDeadlineGrid();
-            }
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton != saveButtonType) return null;
+
+            return new Deadline(
+                    beschreibungField.getText().trim(),
+                    datePicker.getValue(),
+                    typBox.getValue(),
+                    modulNameField.getText().trim());
         });
+
+        return dialog.showAndWait();
     }
 
     @FXML
@@ -311,9 +504,9 @@ public class HomeController {
         if (modulVerwaltung == null) return;
 
         LeistungsRechner rechner = new LeistungsRechner(modulVerwaltung.getModule());
-        
+
         double gpa = rechner.berechneNotendurchschnitt();
-        gpaLabel.setText(String.format("%.2f", gpa));
+        gpaLabel.setText(String.format(Locale.GERMAN, "%.2f", gpa));
 
         int passedEcts = rechner.berechneBestandeneEcts();
         int totalEcts = rechner.berechneGesamtEcts();

@@ -4,7 +4,9 @@ public enum Semester {
     WS23_24("Wintersemester 2023/24"),
     SS24("Sommersemester 2024"),
     WS24_25("Wintersemester 2024/25"),
-    SS25("Sommersemester 2025");
+    SS25("Sommersemester 2025"),
+    WS25_26("Wintersemester 2025/26"),
+    SS26("Sommersemester 2026");
 
     private final String bezeichnung;
 

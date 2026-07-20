@@ -1,0 +1,71 @@
+.card {
+    -fx-padding: 10;
+    -fx-pref-width: 220;
+    -fx-background-color: white;
+    -fx-background-radius: 5;
+    -fx-border-radius: 5;
+    -fx-border-width: 2;
+    -fx-border-color: lightgray;
+}
+
+.card-title {
+    -fx-font-weight: bold;
+    -fx-font-size: 14px;
+}
+
+.card-subtitle {
+    -fx-font-size: 12px;
+    -fx-text-fill: #555555;
+}
+
+.status-offen {
+    -fx-border-color: #f5a623;
+}
+
+.status-ueberfaellig {
+    -fx-border-color: #d93025;
+}
+
+.status-erledigt {
+    -fx-border-color: #34a853;
+}
+
+.btn-delete {
+    -fx-text-fill: #d93025;
+}
+
+.btn-done {
+    -fx-text-fill: #34a853;
+}
+
+.search-clear {
+    -fx-min-width: 32;
+    -fx-pref-width: 32;
+    -fx-font-size: 14px;
+}
+
+.stat-value {
+    -fx-font-size: 24px;
+}
+
+.stat-value-gpa {
+    -fx-text-fill: #2a73e8;
+}
+
+.stat-value-ects {
+    -fx-text-fill: #34a853;
+}
+
+.stat-label {
+    -fx-font-weight: bold;
+    -fx-font-size: 16px;
+}
+
+.card-grid {
+    -fx-hgap: 15;
+    -fx-vgap: 15;
+}
+
+.button-bar {
+    -fx-spacing: 8;
+}

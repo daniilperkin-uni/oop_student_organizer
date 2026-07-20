@@ -117,13 +117,14 @@ public class SpeicherManager {
 
     private void schreibeDeadlines() throws IOException {
         try (BufferedWriter writer = Files.newBufferedWriter(deadlinePfad, StandardCharsets.UTF_8)) {
-            writer.write("beschreibung;datum;typ;modulName");
+            writer.write("beschreibung;datum;typ;modulName;erledigt");
             writer.newLine();
             for (Deadline d : deadlines) {
                 writer.write(escapeCsv(d.getBeschreibung())
                         + TRENNZEICHEN + d.getDatum().toString()
                         + TRENNZEICHEN + d.getTyp().name()
-                        + TRENNZEICHEN + escapeCsv(d.getModulName()));
+                        + TRENNZEICHEN + escapeCsv(d.getModulName())
+                        + TRENNZEICHEN + d.istErledigt());
                 writer.newLine();
             }
         }
@@ -189,7 +190,10 @@ public class SpeicherManager {
                 LocalDate datum = LocalDate.parse(teile[1].trim());
                 DeadlineTyp typ = DeadlineTyp.valueOf(teile[2].trim());
                 String modulName = unescapeCsv(teile[3]);
-                deadlines.add(new Deadline(beschreibung, datum, typ, modulName));
+                boolean erledigt = teile.length >= 5 && Boolean.parseBoolean(teile[4].trim());
+                Deadline deadline = new Deadline(beschreibung, datum, typ, modulName);
+                deadline.setErledigt(erledigt);
+                deadlines.add(deadline);
             }
         } catch (NoSuchFileException e) {
             // Datei existiert noch nicht – kein Fehler beim ersten Start
