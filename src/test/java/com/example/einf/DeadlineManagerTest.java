@@ -59,6 +59,22 @@ class DeadlineManagerTest {
     }
 
     @Test
+    @DisplayName("entfernt eine Frist aus dem Bestand")
+    void loescheFrist() {
+        manager.deleteDeadline(offenBald);
+
+        assertAll(
+                () -> assertFalse(manager.getAllDeadlinesSortiert().contains(offenBald)),
+                () -> assertEquals(3, manager.getAllDeadlinesSortiert().size()));
+    }
+
+    @Test
+    @DisplayName("lehnt null beim Löschen ab")
+    void loeschenMitNullWirftException() {
+        assertThrows(IllegalArgumentException.class, () -> manager.deleteDeadline(null));
+    }
+
+    @Test
     @DisplayName("markiert eine Frist als erledigt")
     void markiereAlsErledigt() {
         manager.markAsErledigt(offenBald);

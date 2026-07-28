@@ -24,6 +24,11 @@ public class DeadlineManager {
         deadline.setErledigt(true);
     }
 
+    public void deleteDeadline(Deadline deadline) {
+        if (deadline == null) throw new IllegalArgumentException("Frist darf nicht null sein.");
+        deadlines.remove(deadline);
+    }
+
     public List<Deadline> getAnstehendeDeadlines(){
         
         List<Deadline> anstehend = new ArrayList<>();

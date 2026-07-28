@@ -150,11 +150,11 @@ public class HomeController {
         alert.showAndWait();
     }
 
-    private boolean bestaetigeLoeschen(String modulName) {
+    private boolean bestaetigeLoeschen(String titel, String header, String name) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
-        alert.setTitle("Modul löschen");
-        alert.setHeaderText("Modul wirklich löschen?");
-        alert.setContentText("Möchten Sie \"" + modulName + "\" endgültig entfernen?");
+        alert.setTitle(titel);
+        alert.setHeaderText(header);
+        alert.setContentText("Möchten Sie \"" + name + "\" endgültig entfernen?");
         return alert.showAndWait().filter(ButtonType.OK::equals).isPresent();
     }
 
@@ -235,7 +235,7 @@ public class HomeController {
         Button deleteBtn = new Button("Löschen");
         deleteBtn.getStyleClass().add("btn-delete");
         deleteBtn.setOnAction(e -> {
-            if (bestaetigeLoeschen(m.getName())) {
+            if (bestaetigeLoeschen("Modul löschen", "Modul wirklich löschen?", m.getName())) {
                 modulVerwaltung.deleteModul(m.getId());
                 refreshModuleGrid();
                 speichereAenderungen();
@@ -470,7 +470,17 @@ public class HomeController {
         });
         doneBtn.setDisable(d.istErledigt());
 
-        buttonBar.getChildren().addAll(editBtn, doneBtn);
+        Button deleteBtn = new Button("Löschen");
+        deleteBtn.getStyleClass().add("btn-delete");
+        deleteBtn.setOnAction(e -> {
+            if (bestaetigeLoeschen("Frist löschen", "Frist wirklich löschen?", d.getTitel())) {
+                deadlineManager.deleteDeadline(d);
+                refreshDeadlineGrid();
+                speichereAenderungen();
+            }
+        });
+
+        buttonBar.getChildren().addAll(editBtn, doneBtn, deleteBtn);
         card.getChildren().addAll(nameLabel, dateLabel, typLabel, modulLabel, statusLabel, buttonBar);
         return card;
     }
