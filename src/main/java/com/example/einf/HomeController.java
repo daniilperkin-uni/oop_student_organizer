@@ -14,6 +14,9 @@ import javafx.scene.layout.VBox;
 
 import java.io.IOException;
 import java.time.LocalDate;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
@@ -37,10 +40,30 @@ public class HomeController {
     @FXML
     private TextField searchBar;
 
+    @FXML
+    private ComboBox<String> statusFilterBox;
+
+    @FXML
+    private ComboBox<String> semesterFilterBox;
+
+    @FXML
+    private ComboBox<String> sortFieldBox;
+
+    @FXML
+    private Button sortDirectionButton;
+
+    @FXML
+    private Button deadlineSortDirectionButton;
+
     private ModulVerwaltung modulVerwaltung;
     private DeadlineManager deadlineManager;
     private SpeicherManager speicherManager;
     private String searchQuery = "";
+    private boolean moduleSortDescending = false;
+    private boolean deadlineSortDescending = false;
+
+    private static final String ALLE = "Alle";
+    private static final String ALLE_SEMESTER = "Alle Semester";
 
     public void setModulVerwaltung(ModulVerwaltung modulVerwaltung) {
         this.modulVerwaltung = modulVerwaltung;
@@ -68,6 +91,45 @@ public class HomeController {
     public void clearSearchButtonOnAction(ActionEvent actionEvent) {
         if (searchBar != null) {
             searchBar.clear();
+        }
+    }
+
+    public void initializeFilters() {
+        if (statusFilterBox != null) {
+            statusFilterBox.getItems().addAll(ALLE, "Bestanden", "Nicht bestanden");
+            statusFilterBox.setValue(ALLE);
+            statusFilterBox.valueProperty().addListener((obs, oldVal, newVal) -> refreshModuleGrid());
+        }
+
+        if (semesterFilterBox != null) {
+            semesterFilterBox.getItems().add(ALLE_SEMESTER);
+            for (Semester s : Semester.values()) {
+                semesterFilterBox.getItems().add(s.getBezeichnung());
+            }
+            semesterFilterBox.setValue(ALLE_SEMESTER);
+            semesterFilterBox.valueProperty().addListener((obs, oldVal, newVal) -> refreshModuleGrid());
+        }
+
+        if (sortFieldBox != null) {
+            sortFieldBox.getItems().addAll("Name", "ECTS", "Note");
+            sortFieldBox.setValue("Name");
+            sortFieldBox.valueProperty().addListener((obs, oldVal, newVal) -> refreshModuleGrid());
+        }
+
+        if (sortDirectionButton != null) {
+            sortDirectionButton.setOnAction(e -> {
+                moduleSortDescending = !moduleSortDescending;
+                sortDirectionButton.setText(moduleSortDescending ? "▼" : "▲");
+                refreshModuleGrid();
+            });
+        }
+
+        if (deadlineSortDirectionButton != null) {
+            deadlineSortDirectionButton.setOnAction(e -> {
+                deadlineSortDescending = !deadlineSortDescending;
+                deadlineSortDirectionButton.setText(deadlineSortDescending ? "▼" : "▲");
+                refreshDeadlineGrid();
+            });
         }
     }
 
@@ -100,10 +162,12 @@ public class HomeController {
         if (moduleGrid == null || modulVerwaltung == null) return;
         moduleGrid.getChildren().clear();
 
-        for (Modul m : modulVerwaltung.getModule()) {
-            if (!matchesSearch(m)) continue;
-            moduleGrid.getChildren().add(createModuleCard(m));
-        }
+        modulVerwaltung.getModule().stream()
+                .filter(this::matchesSearch)
+                .filter(this::matchesStatusFilter)
+                .filter(this::matchesSemesterFilter)
+                .sorted(aktuellerModulComparator())
+                .forEach(m -> moduleGrid.getChildren().add(createModuleCard(m)));
     }
 
     private boolean matchesSearch(Modul m) {
@@ -113,6 +177,36 @@ public class HomeController {
             return true;
         }
         return m.getSemester() != null && m.getSemester().name().toLowerCase(Locale.GERMAN).contains(searchQuery);
+    }
+
+    private boolean matchesStatusFilter(Modul m) {
+        String filter = statusFilterBox == null ? null : statusFilterBox.getValue();
+        if (filter == null || ALLE.equals(filter)) return true;
+        boolean bestanden = m.getLeistung() != null && m.getLeistung().isBestanden();
+        return "Bestanden".equals(filter) == bestanden;
+    }
+
+    private boolean matchesSemesterFilter(Modul m) {
+        String filter = semesterFilterBox == null ? null : semesterFilterBox.getValue();
+        if (filter == null || ALLE_SEMESTER.equals(filter)) return true;
+        return m.getSemester() != null && filter.equals(m.getSemester().getBezeichnung());
+    }
+
+    private Comparator<Modul> aktuellerModulComparator() {
+        String field = sortFieldBox == null ? null : sortFieldBox.getValue();
+        Comparator<Modul> comparator = switch (field == null ? "Name" : field) {
+            case "ECTS" -> Comparator.comparingInt(Modul::getEcts);
+            case "Note" -> Comparator.comparingDouble(this::noteFuerSortierung);
+            default -> Comparator.comparing(Modul::getName, String.CASE_INSENSITIVE_ORDER);
+        };
+        return moduleSortDescending ? comparator.reversed() : comparator;
+    }
+
+    private double noteFuerSortierung(Modul m) {
+        if (m.getLeistung() instanceof Pruefungsleistung p) {
+            return p.getErreichteNote();
+        }
+        return Double.MAX_VALUE;
     }
 
     private VBox createModuleCard(Modul m) {
@@ -330,7 +424,11 @@ public class HomeController {
         if (deadlineGrid == null || deadlineManager == null) return;
         deadlineGrid.getChildren().clear();
 
-        for (Deadline d : deadlineManager.getAllDeadlinesSortiert()) {
+        List<Deadline> deadlines = deadlineManager.getAllDeadlinesSortiert();
+        if (deadlineSortDescending) {
+            Collections.reverse(deadlines);
+        }
+        for (Deadline d : deadlines) {
             deadlineGrid.getChildren().add(createDeadlineCard(d));
         }
     }

@@ -35,6 +35,7 @@ public class Main extends Application {
 
 		controller.setSpeicherManager(speicherManager);
 		controller.initializeSearch();
+		controller.initializeFilters();
 
 		stage.setTitle("Studentischer Organisationshelfer");
 		stage.setScene(scene);

@@ -5,6 +5,7 @@
 <?import javafx.scene.chart.CategoryAxis?>
 <?import javafx.scene.chart.NumberAxis?>
 <?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Tab?>
@@ -39,6 +40,10 @@
                     <HBox BorderPane.alignment="CENTER" spacing="10">
                         <children>
                             <Button fx:id="addModuleButton" minWidth="120.0" mnemonicParsing="false" onAction="#addModuleButtonOnAction" text="Modul hinzufügen" />
+                            <ComboBox fx:id="statusFilterBox" />
+                            <ComboBox fx:id="semesterFilterBox" />
+                            <ComboBox fx:id="sortFieldBox" />
+                            <Button fx:id="sortDirectionButton" mnemonicParsing="false" text="▲" />
                             <Pane HBox.hgrow="ALWAYS" />
                             <HBox fillHeight="false" maxWidth="800.0" minWidth="200.0" prefWidth="600.0" spacing="5">
                                 <children>
@@ -73,9 +78,10 @@
                     </VBox>
                 </center>
                 <top>
-                    <HBox BorderPane.alignment="CENTER">
+                    <HBox BorderPane.alignment="CENTER" spacing="10">
                         <children>
                             <Button fx:id="addDeadlineButton" mnemonicParsing="false" onAction="#addDeadlineButtonOnAction" text="Frist hinzufügen" />
+                            <Button fx:id="deadlineSortDirectionButton" mnemonicParsing="false" text="▲" />
                         </children>
                         <BorderPane.margin>
                             <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
