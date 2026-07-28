@@ -9,6 +9,7 @@ import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -120,9 +121,11 @@ public class SpeicherManager {
             writer.write("beschreibung;datum;typ;modulName;erledigt");
             writer.newLine();
             for (Deadline d : deadlines) {
+                // Der Konstruktor Deadline(titel, datum, modul) lässt den Typ auf null;
+                // dieser Fall muss beim Schreiben abgefangen werden.
                 writer.write(escapeCsv(d.getBeschreibung())
                         + TRENNZEICHEN + d.getDatum().toString()
-                        + TRENNZEICHEN + d.getTyp().name()
+                        + TRENNZEICHEN + (d.getTyp() != null ? d.getTyp().name() : "NULL")
                         + TRENNZEICHEN + escapeCsv(d.getModulName())
                         + TRENNZEICHEN + d.istErledigt());
                 writer.newLine();
@@ -136,46 +139,60 @@ public class SpeicherManager {
             String zeile;
             while ((zeile = reader.readLine()) != null) {
                 if (zeile.isBlank()) continue;
-                String[] teile = zeile.split(TRENNZEICHEN, -1);
-                // Kompatibilität: falls alte Datei
-                if (teile.length == 4) {
-                    String name = unescapeCsv(teile[0]);
-                    int ects = Integer.parseInt(teile[1].trim());
-                    ModulStatus status = ModulStatus.valueOf(teile[2].trim());
-                    double note = Double.parseDouble(teile[3].trim());
-                    Modul m = new Modul(name, ects, note > 0.0, null);
-                    if (note > 0.0 || status == ModulStatus.BESTANDEN) {
-                        if (m.istBenotet()) {
-                            m.setLeistung(new Pruefungsleistung(m, note));
-                        } else {
-                            m.setLeistung(new Studienleistung(m, status == ModulStatus.BESTANDEN));
-                        }
-                    }
-                    module.add(m);
-                } else if (teile.length >= 8) {
-                    String id = unescapeCsv(teile[0]);
-                    String name = unescapeCsv(teile[1]);
-                    int ects = Integer.parseInt(teile[2].trim());
-                    boolean istBenotet = Boolean.parseBoolean(teile[3].trim());
-                    String semesterStr = teile[4].trim();
-                    Semester semester = semesterStr.equals("NULL") ? null : Semester.valueOf(semesterStr);
-                    
-                    Modul m = new Modul(id, name, ects, istBenotet, semester);
-                    
-                    String lTyp = teile[5].trim();
-                    if (lTyp.equals("PRUEFUNG")) {
-                        double note = Double.parseDouble(teile[7].trim());
-                        m.setLeistung(new Pruefungsleistung(m, note));
-                    } else if (lTyp.equals("STUDIEN")) {
-                        boolean bestanden = Boolean.parseBoolean(teile[6].trim());
-                        m.setLeistung(new Studienleistung(m, bestanden));
-                    }
-                    module.add(m);
+                try {
+                    Modul m = leseModulZeile(splitCsv(zeile));
+                    if (m != null) module.add(m);
+                } catch (IllegalArgumentException e) {
+                    // Fängt auch ValidationException und NumberFormatException.
+                    // Defekte Zeile überspringen, statt den gesamten Ladevorgang abzubrechen.
+                    System.err.println("Überspringe fehlerhafte Modulzeile: " + zeile);
                 }
             }
         } catch (NoSuchFileException e) {
             // Datei existiert noch nicht – kein Fehler beim ersten Start
         }
+    }
+
+    /**
+     * Baut ein Modul aus den bereits aufgetrennten CSV-Feldern.
+     *
+     * @return das gelesene Modul, oder {@code null} wenn die Feldanzahl zu keinem
+     *         bekannten Format passt
+     */
+    private Modul leseModulZeile(List<String> teile) {
+        // Kompatibilität: falls alte Datei
+        if (teile.size() == 4) {
+            String name = unescapeCsv(teile.get(0));
+            int ects = Integer.parseInt(teile.get(1).trim());
+            ModulStatus status = ModulStatus.valueOf(teile.get(2).trim());
+            double note = Double.parseDouble(teile.get(3).trim());
+            Modul m = new Modul(name, ects, note > 0.0, null);
+            if (note > 0.0) {
+                m.setLeistung(new Pruefungsleistung(m, note));
+            } else if (status == ModulStatus.BESTANDEN) {
+                m.setLeistung(new Studienleistung(m, true));
+            }
+            return m;
+        }
+        if (teile.size() >= 8) {
+            String id = unescapeCsv(teile.get(0));
+            String name = unescapeCsv(teile.get(1));
+            int ects = Integer.parseInt(teile.get(2).trim());
+            boolean istBenotet = Boolean.parseBoolean(teile.get(3).trim());
+            String semesterStr = teile.get(4).trim();
+            Semester semester = semesterStr.equals("NULL") ? null : Semester.valueOf(semesterStr);
+
+            Modul m = new Modul(id, name, ects, istBenotet, semester);
+
+            String lTyp = teile.get(5).trim();
+            if (lTyp.equals("PRUEFUNG")) {
+                m.setLeistung(new Pruefungsleistung(m, Double.parseDouble(teile.get(7).trim())));
+            } else if (lTyp.equals("STUDIEN")) {
+                m.setLeistung(new Studienleistung(m, Boolean.parseBoolean(teile.get(6).trim())));
+            }
+            return m;
+        }
+        return null;
     }
 
     private void ladeDeadlines() throws IOException {
@@ -184,16 +201,25 @@ public class SpeicherManager {
             String zeile;
             while ((zeile = reader.readLine()) != null) {
                 if (zeile.isBlank()) continue;
-                String[] teile = zeile.split(TRENNZEICHEN, -1);
-                if (teile.length < 4) continue;
-                String beschreibung = unescapeCsv(teile[0]);
-                LocalDate datum = LocalDate.parse(teile[1].trim());
-                DeadlineTyp typ = DeadlineTyp.valueOf(teile[2].trim());
-                String modulName = unescapeCsv(teile[3]);
-                boolean erledigt = teile.length >= 5 && Boolean.parseBoolean(teile[4].trim());
-                Deadline deadline = new Deadline(beschreibung, datum, typ, modulName);
-                deadline.setErledigt(erledigt);
-                deadlines.add(deadline);
+                try {
+                    List<String> teile = splitCsv(zeile);
+                    if (teile.size() < 4) continue;
+                    String beschreibung = unescapeCsv(teile.get(0));
+                    LocalDate datum = LocalDate.parse(teile.get(1).trim());
+                    String typStr = teile.get(2).trim();
+                    DeadlineTyp typ = typStr.equals("NULL") || typStr.isEmpty()
+                            ? null
+                            : DeadlineTyp.valueOf(typStr);
+                    String modulName = unescapeCsv(teile.get(3));
+                    boolean erledigt = teile.size() >= 5 && Boolean.parseBoolean(teile.get(4).trim());
+                    Deadline deadline = new Deadline(beschreibung, datum, typ, modulName);
+                    deadline.setErledigt(erledigt);
+                    deadlines.add(deadline);
+                } catch (IllegalArgumentException | DateTimeParseException e) {
+                    // Fängt auch ValidationException und NumberFormatException.
+                    // Defekte Zeile überspringen, statt den gesamten Ladevorgang abzubrechen.
+                    System.err.println("Überspringe fehlerhafte Fristzeile: " + zeile);
+                }
             }
         } catch (NoSuchFileException e) {
             // Datei existiert noch nicht – kein Fehler beim ersten Start
@@ -206,9 +232,58 @@ public class SpeicherManager {
         return wert.replace("\\", "\\\\").replace(TRENNZEICHEN, "\\;").replace("\n", "\\n");
     }
 
+    /**
+     * Trennt eine CSV-Zeile an den Semikolons auf und respektiert dabei die von
+     * {@link #escapeCsv(String)} gesetzten Maskierungen.
+     *
+     * <p>Ein einfaches {@code String.split(";")} würde auch an einem maskierten
+     * {@code \;} trennen und dadurch alle nachfolgenden Felder verschieben. Die
+     * Escape-Sequenzen selbst bleiben hier erhalten und werden anschließend von
+     * {@link #unescapeCsv(String)} aufgelöst.
+     */
+    private List<String> splitCsv(String zeile) {
+        List<String> felder = new ArrayList<>();
+        StringBuilder feld = new StringBuilder();
+        boolean maskiert = false;
+
+        for (int i = 0; i < zeile.length(); i++) {
+            char zeichen = zeile.charAt(i);
+            if (maskiert) {
+                feld.append(zeichen);
+                maskiert = false;
+            } else if (zeichen == '\\') {
+                feld.append(zeichen);
+                maskiert = true;
+            } else if (zeichen == ';') {
+                felder.add(feld.toString());
+                feld.setLength(0);
+            } else {
+                feld.append(zeichen);
+            }
+        }
+        felder.add(feld.toString());
+        return felder;
+    }
+
     /** Stellt ein maskiertes CSV-Feld wieder her. */
     private String unescapeCsv(String wert) {
         if (wert == null) return "";
-        return wert.replace("\\n", "\n").replace("\\;", TRENNZEICHEN).replace("\\\\", "\\");
+        StringBuilder ergebnis = new StringBuilder();
+
+        for (int i = 0; i < wert.length(); i++) {
+            char zeichen = wert.charAt(i);
+            if (zeichen == '\\' && i + 1 < wert.length()) {
+                char naechstes = wert.charAt(++i);
+                switch (naechstes) {
+                    case 'n' -> ergebnis.append('\n');
+                    case ';' -> ergebnis.append(';');
+                    case '\\' -> ergebnis.append('\\');
+                    default -> ergebnis.append(naechstes);
+                }
+            } else {
+                ergebnis.append(zeichen);
+            }
+        }
+        return ergebnis.toString();
     }
 }
