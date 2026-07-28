@@ -17,6 +17,7 @@ class EingabeValidierungTest {
         assertTrue(EingabeValidierung.validiereEcts("6").isEmpty());
         assertTrue(EingabeValidierung.validiereEcts("abc").isPresent());
         assertTrue(EingabeValidierung.validiereEcts("0").isPresent());
+        assertTrue(EingabeValidierung.validiereEcts("-5").isPresent());
     }
 
     @Test

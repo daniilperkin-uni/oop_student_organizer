@@ -32,4 +32,21 @@ class DeadlineTest {
 
         assertEquals(DeadlineStatus.ERLEDIGT, deadline.getStatus());
     }
+
+    @Test
+    void deadlineHeuteIstNochOffen() {
+        Deadline deadline = new Deadline("Abgabe", LocalDate.now(), DeadlineTyp.ABGABE, "Algorithmen");
+
+        assertEquals(DeadlineStatus.OFFEN, deadline.getStatus());
+        assertFalse(deadline.isAbgelaufen());
+    }
+
+    @Test
+    void deadlineAnSchaltjahrDatumWirdKorrektAusgewertet() {
+        Deadline vergangeneSchaltjahresDeadline = new Deadline("Abgabe", LocalDate.of(2024, 2, 29), DeadlineTyp.ABGABE, "Algorithmen");
+        Deadline zukuenftigeSchaltjahresDeadline = new Deadline("Abgabe", LocalDate.of(2028, 2, 29), DeadlineTyp.ABGABE, "Algorithmen");
+
+        assertEquals(DeadlineStatus.UEBERFAELLIG, vergangeneSchaltjahresDeadline.getStatus());
+        assertEquals(DeadlineStatus.OFFEN, zukuenftigeSchaltjahresDeadline.getStatus());
+    }
 }
