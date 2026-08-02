@@ -1,19 +1,30 @@
 package com.example.einf;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
 public class DeadlineManager {
 
-    private List<Deadline> deadlines;
+    private final List<Deadline> deadlines;
 
     public DeadlineManager(){
         this.deadlines = new ArrayList<>();
     }
 
     public DeadlineManager(List<Deadline> deadlines){
-        this.deadlines = deadlines;
+        // Defensive copy: the manager owns its own list.
+        this.deadlines = new ArrayList<>(deadlines);
+    }
+
+    /**
+     * Returns an unmodifiable view of all deadlines (in insertion order).
+     * Use addDeadline/deleteDeadline for changes. The controller syncs this
+     * view back into the SpeicherManager before persisting.
+     */
+    public List<Deadline> getDeadlines() {
+        return Collections.unmodifiableList(deadlines);
     }
 
     public void addDeadline(Deadline deadline){

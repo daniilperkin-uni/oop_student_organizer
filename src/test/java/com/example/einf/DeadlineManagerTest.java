@@ -97,7 +97,7 @@ class DeadlineManagerTest {
     }
 
     @Test
-    @DisplayName("arbeitet auf der übergebenen Liste weiter")
+    @DisplayName("erstellt eine defensive Kopie der übergebenen Liste")
     void umschliesstUebergebeneListe() {
         List<Deadline> bestand = new ArrayList<>();
         DeadlineManager wrapper = new DeadlineManager(bestand);
@@ -105,8 +105,12 @@ class DeadlineManagerTest {
         Deadline neu = new Deadline("Neu", LocalDate.now().plusDays(1), DeadlineTyp.ABGABE, "");
         wrapper.addDeadline(neu);
 
-        assertEquals(List.of(neu), bestand,
-                "Der Manager muss dieselbe Liste befüllen, die persistiert wird.");
+        // The manager owns its own internal list (defensive copy), so the
+        // original list stays empty and the manager's view reflects the add.
+        assertTrue(bestand.isEmpty(),
+                "Die übergebene Liste darf nicht verändert werden (defensive Kopie).");
+        assertEquals(List.of(neu), wrapper.getDeadlines(),
+                "Der Manager muss den neuen Deadline in seiner eigenen Liste verwalten.");
     }
 
     @Test

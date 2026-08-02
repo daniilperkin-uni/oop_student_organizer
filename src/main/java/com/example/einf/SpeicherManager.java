@@ -11,6 +11,7 @@ import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -44,8 +45,34 @@ public class SpeicherManager {
     }
 
 
-    public List<Modul> getModule() { return module; }
-    public List<Deadline> getDeadlines() { return deadlines; }
+    /**
+     * Returns an unmodifiable view of the loaded modules. The SpeicherManager
+     * is the persistence backing store; the live, mutable state is owned by
+     * the ModulVerwaltung. Callers must not mutate the returned list directly
+     * -- use setModule(...) to replace the whole set before saving.
+     */
+    public List<Modul> getModule() { return Collections.unmodifiableList(module); }
+
+    /**
+     * Returns an unmodifiable view of the loaded deadlines. See getModule().
+     */
+    public List<Deadline> getDeadlines() { return Collections.unmodifiableList(deadlines); }
+
+    /**
+     * Replaces the entire module set (defensive copy). The controller calls
+     * this to sync the ModulVerwaltung state back into the SpeicherManager
+     * right before persisting, since the managers now own private copies.
+     */
+    public void setModule(List<Modul> module) {
+        this.module.clear();
+        if (module != null) this.module.addAll(module);
+    }
+
+    /** Replaces the entire deadline set (defensive copy). See setModule(). */
+    public void setDeadlines(List<Deadline> deadlines) {
+        this.deadlines.clear();
+        if (deadlines != null) this.deadlines.addAll(deadlines);
+    }
 
     public void addModul(Modul modul) { module.add(modul); }
     public void addDeadline(Deadline deadline) { deadlines.add(deadline); }

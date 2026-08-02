@@ -32,7 +32,12 @@ public class Modul {
     }
 
     public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
+    /**
+     * Package-private on purpose: the id is assigned in the constructor
+     * (UUID-generated, or restored from storage). Allowing public mutation
+     * would break the immutability invariant of the id after construction.
+     */
+    void setId(String id) { this.id = id; }
 
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }

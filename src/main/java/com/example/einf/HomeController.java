@@ -20,6 +20,34 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
+/**
+ * Single FXML controller for the main view's three tabs (Module, Fristen,
+ * Noten).
+ *
+ * <h2>Accepted SRP trade-off</h2>
+ * Strictly, each tab should have its own controller (ModuleTabController,
+ * DeadlineTabController, GradesTabController). This controller is ~640 lines
+ * and handles three unrelated concerns, which violates the Single
+ * Responsibility Principle.
+ *
+ * <p>The split is intentionally NOT performed here because the FXML
+ * (home-view.fxml) binds a single {@code fx:controller="com.example.einf.HomeController"}
+ * at the TabPane root, and every tab's controls and {@code onAction} handlers
+ * resolve against that one controller. Splitting would require restructuring
+ * the FXML (per-tab controllers via nested {@code <fx:include>} or separate
+ * FXML files) and re-wiring all {@code fx:id} injections -- a larger
+ * refactor with real regression risk on a JavaFX UI that has no automated
+ * FXML-loading test coverage. The sections below are kept clearly separated
+ * by comment banners to keep the three concerns navigable until the split is
+ * done. The logic split points are:
+ * <ul>
+ *   <li>Module tab -- addModuleButtonOnAction, bearbeiteModul, showModulDialog,
+ *       refreshModuleGrid, createModuleCard, filtering/sorting helpers</li>
+ *   <li>Fristen tab -- addDeadlineButtonOnAction, bearbeiteDeadline,
+ *       showDeadlineDialog, refreshDeadlineGrid, createDeadlineCard</li>
+ *   <li>Noten tab -- onGradesTabSelected, refreshGradesTab</li>
+ * </ul>
+ */
 public class HomeController {
 
     @FXML
@@ -135,6 +163,16 @@ public class HomeController {
 
     private void speichereAenderungen() {
         if (speicherManager == null) return;
+        // The ModulVerwaltung/DeadlineManager own private defensive copies of
+        // the lists, so the SpeicherManager no longer shares their live state.
+        // Push the managers' current state back into the SpeicherManager right
+        // before persisting, so every add/edit/delete is written to disk.
+        if (modulVerwaltung != null) {
+            speicherManager.setModule(modulVerwaltung.getModule());
+        }
+        if (deadlineManager != null) {
+            speicherManager.setDeadlines(deadlineManager.getDeadlines());
+        }
         try {
             speicherManager.speichereDaten();
         } catch (IOException e) {

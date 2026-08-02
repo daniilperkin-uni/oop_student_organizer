@@ -5,9 +5,17 @@ import java.time.LocalDate;
 /**
  * Repräsentiert eine Frist (Anmeldung, Abgabe oder Klausur) mit optionalem Modulbezug.
  */
+/**
+ * Note on the modul/modulName dual representation (accepted):
+ * A Deadline can be created either with a {@link Modul} reference (then
+ * modulName is derived from it) or with just a module name string (then
+ * modul stays null). The two are parallel, intentionally not synced at
+ * runtime: modul is the object link used in-memory, modulName is the
+ * plain text persisted to CSV. This keeps persistence independent of
+ * live Modul objects and is an accepted design trade-off, documented here.
+ */
 public class Deadline {
     
-    private String titel;
     private LocalDate datum;
     private boolean istErledigt;
     private Modul modul;   //Referenz auf zugehöriges Modul
@@ -17,7 +25,6 @@ public class Deadline {
     private String modulName; // optional – kann leer sein
 
     public Deadline(String titel, LocalDate datum, Modul modul){
-        this.titel = titel;
         this.datum = datum;
         this.modul = modul;
         this.istErledigt = false;
@@ -31,14 +38,20 @@ public class Deadline {
         this.datum = datum;
         this.typ = typ;
         this.modulName = modulName == null ? "" : modulName;
-        
-        this.titel = beschreibung;
+
         this.istErledigt = false;
         this.modul = null;
     }
 
+    /**
+     * Convenience accessor returning the description as the title.
+     * The former separate {@code titel} field was an alias for
+     * {@code beschreibung} (setBeschreibung always updated both),
+     * which was a real dual-identity smell. The field has been
+     * removed; getTitel() now unambiguously delegates to beschreibung.
+     */
     public String getTitel(){
-        return this.titel;
+        return this.beschreibung;
     }
 
     public LocalDate getDatum(){
@@ -74,9 +87,8 @@ public class Deadline {
     }
 
     public String getBeschreibung() { return beschreibung; }
-    public void setBeschreibung(String beschreibung) { 
-        this.beschreibung = beschreibung; 
-        this.titel = beschreibung;
+    public void setBeschreibung(String beschreibung) {
+        this.beschreibung = beschreibung;
     }
 
     public DeadlineTyp getTyp() { return typ; }

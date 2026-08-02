@@ -1,6 +1,7 @@
 package com.example.einf;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class ModulVerwaltung {
@@ -12,11 +13,18 @@ public class ModulVerwaltung {
     }
 
     public ModulVerwaltung(List<Modul> module) {
-        this.module = module;
+        // Defensive copy: the manager owns its own list so callers cannot
+        // mutate the backing store through the reference they passed in.
+        this.module = new ArrayList<>(module);
     }
 
+    /**
+     * Returns an unmodifiable view of the modules. Callers can read and
+     * iterate freely but cannot mutate the internal list directly; use
+     * addModul/updateModul/deleteModul for changes.
+     */
     public List<Modul> getModule() {
-        return module;
+        return Collections.unmodifiableList(module);
     }
 
     public void addModul(Modul m) {
