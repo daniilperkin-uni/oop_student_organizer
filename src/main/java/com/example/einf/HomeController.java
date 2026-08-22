@@ -152,8 +152,23 @@ public class HomeController {
     }
 
     @FXML
+    public void onExportIcs(ActionEvent actionEvent) {
+        deadlineTab.exportiereIcs();
+    }
+
+    @FXML
     public void onGradesTabSelected(Event event) {
         gradesTab.onTabSelected();
+    }
+
+    @FXML
+    public void onShowSemesterDashboard(ActionEvent event) {
+        gradesTab.showSemesterDashboard();
+    }
+
+    @FXML
+    public void onSimulateGrades(ActionEvent event) {
+        gradesTab.showGradeSimulator();
     }
 
     private void speichereAenderungen() {

@@ -2,6 +2,7 @@ package com.example.einf;
 
 import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Dialog;
@@ -91,6 +92,37 @@ class DeadlineTabController {
             refreshDeadlineGrid();
             saveChanges();
         });
+    }
+
+    /**
+     * Exportiert alle Fristen als iCalendar-Datei. Der Speicherort wird per
+     * Verzeichnis-Dialog gewaehlt, der Dateiname ist fix (fristen.ics).
+     */
+    void exportiereIcs() {
+        if (deadlineManager == null) return;
+        List<Deadline> alle = deadlineManager.getAllDeadlinesSortiert();
+        if (alle.isEmpty()) {
+            UiDialogs.zeigeFehler("Export", "Nichts zu exportieren",
+                    "Es sind keine Fristen erfasst.");
+            return;
+        }
+
+        javafx.stage.DirectoryChooser chooser = new javafx.stage.DirectoryChooser();
+        chooser.setTitle("Ordner für den Kalenderexport wählen");
+        java.io.File ordner = chooser.showDialog(null);
+        if (ordner == null) return;
+
+        java.nio.file.Path ziel = java.nio.file.Path.of(ordner.getAbsolutePath(), "fristen.ics");
+        try {
+            IcsExporter.exportiere(alle, ziel);
+            Alert ok = new Alert(Alert.AlertType.INFORMATION);
+            ok.setTitle("Export");
+            ok.setHeaderText("Kalender exportiert");
+            ok.setContentText(alle.size() + " Fristen geschrieben nach:\n" + ziel);
+            ok.showAndWait();
+        } catch (java.io.IOException e) {
+            UiDialogs.zeigeFehler("Exportfehler", "Datei konnte nicht geschrieben werden", e.getMessage());
+        }
     }
 
     private void saveChanges() {
