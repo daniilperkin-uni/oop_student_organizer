@@ -34,6 +34,7 @@ public class Main extends Application {
 		controller.setDeadlineManager(deadlineManager);
 
 		controller.setSpeicherManager(speicherManager);
+		controller.initializeControllers();
 		controller.initializeSearch();
 		controller.initializeFilters();
 
