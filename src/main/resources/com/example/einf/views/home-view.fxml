@@ -82,6 +82,7 @@
                         <children>
                             <Button fx:id="addDeadlineButton" mnemonicParsing="false" onAction="#addDeadlineButtonOnAction" text="Frist hinzufügen" />
                             <Button fx:id="deadlineSortDirectionButton" mnemonicParsing="false" text="▲" />
+                            <Button mnemonicParsing="false" onAction="#onExportIcs" text="Als Kalender exportieren (.ics)" />
                         </children>
                         <BorderPane.margin>
                             <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
@@ -106,6 +107,10 @@
                       <Label text="Erreichte ECTS:" styleClass="stat-label"/>
                       <Label fx:id="ectsLabel" text="0 / 0" styleClass="stat-value, stat-value-ects"/>
                   </VBox>
+              </HBox>
+              <HBox alignment="CENTER" spacing="20">
+                  <Button onAction="#onSimulateGrades" mnemonicParsing="false" text="Notensimulator öffnen" />
+                  <Button onAction="#onShowSemesterDashboard" mnemonicParsing="false" text="Semester-Dashboard" />
               </HBox>
               <BarChart fx:id="gradesChart" prefHeight="400.0" prefWidth="600.0">
                 <xAxis>
