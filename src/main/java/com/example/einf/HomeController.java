@@ -42,6 +42,9 @@ public class HomeController {
     private BarChart<String, Number> gradesChart;
 
     @FXML
+    private javafx.scene.chart.PieChart ectsChart;
+
+    @FXML
     private TextField searchBar;
 
     @FXML
@@ -102,6 +105,7 @@ public class HomeController {
         gradesTab.setGpaLabel(gpaLabel);
         gradesTab.setEctsLabel(ectsLabel);
         gradesTab.setGradesChart(gradesChart);
+        gradesTab.setEctsChart(ectsChart);
 
         moduleTab.initializeSearch();
         moduleTab.initializeFilters();

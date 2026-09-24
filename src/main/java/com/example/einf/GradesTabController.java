@@ -7,6 +7,7 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.chart.BarChart;
+import javafx.scene.chart.PieChart;
 import javafx.scene.chart.XYChart;
 
 import java.util.List;
@@ -27,6 +28,7 @@ class GradesTabController {
     private Label gpaLabel;
     private Label ectsLabel;
     private BarChart<String, Number> gradesChart;
+    private PieChart ectsChart;
 
     private ModulVerwaltung modulVerwaltung;
 
@@ -40,6 +42,10 @@ class GradesTabController {
 
     void setGradesChart(BarChart<String, Number> gradesChart) {
         this.gradesChart = gradesChart;
+    }
+
+    void setEctsChart(PieChart ectsChart) {
+        this.ectsChart = ectsChart;
     }
 
     void setModulVerwaltung(ModulVerwaltung modulVerwaltung) {
@@ -164,6 +170,15 @@ class GradesTabController {
         int passedEcts = rechner.berechneBestandeneEcts();
         int totalEcts = rechner.berechneGesamtEcts();
         ectsLabel.setText(passedEcts + " / " + totalEcts);
+
+        if (ectsChart != null) {
+            EctsFortschritt f = EctsFortschritt.berechne(modulVerwaltung.getModule());
+            ectsChart.getData().setAll(
+                    new PieChart.Data("Bestanden (" + f.bestanden() + ")", f.bestanden()),
+                    new PieChart.Data("Nicht bestanden (" + f.nichtBestanden() + ")", f.nichtBestanden()),
+                    new PieChart.Data("Offen (" + f.offen() + ")", f.offen()));
+            ectsChart.setTitle(String.format(Locale.GERMAN, "ECTS-Fortschritt: %.0f %%", f.prozentBestanden()));
+        }
 
         if (gradesChart != null) {
             gradesChart.getData().clear();

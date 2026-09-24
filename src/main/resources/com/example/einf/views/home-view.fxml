@@ -4,6 +4,7 @@
 <?import javafx.scene.chart.BarChart?>
 <?import javafx.scene.chart.CategoryAxis?>
 <?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.chart.PieChart?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.ComboBox?>
 <?import javafx.scene.control.Label?>
@@ -112,6 +113,7 @@
                   <Button onAction="#onSimulateGrades" mnemonicParsing="false" text="Notensimulator öffnen" />
                   <Button onAction="#onShowSemesterDashboard" mnemonicParsing="false" text="Semester-Dashboard" />
               </HBox>
+              <PieChart fx:id="ectsChart" title="ECTS-Fortschritt" prefHeight="300.0" prefWidth="600.0" legendVisible="true"/>
               <BarChart fx:id="gradesChart" prefHeight="400.0" prefWidth="600.0">
                 <xAxis>
                   <CategoryAxis side="BOTTOM" label="Module"/>
