@@ -11,7 +11,7 @@ Entwickelt unter Anwendung aller gelernten Konzepte der objektorientierten Progr
 
 * **Verwaltung von Modulen:** Fächer inkl. ECTS und Status anlegen, bearbeiten und verwalten.
 * **Deadline-Tracking:** Anmelde- und Abgabefristen sowie Klausurtermine überwachen (mit Warnfunktion).
-* **Leistungsüberwachung:** Automatische Berechnung des gewichteten Notendurchschnitts und des Studienfortschritts.
+* **Leistungsüberwachung:** Automatische Berechnung des gewichteten Notendurchschnitts und des Studienfortschritts, inkl. ECTS-Fortschrittsdiagramm im Tab „Noten“.
 * **Persistente Datenhaltung:** Sicheres Speichern und Laden der Nutzerdaten auf der Festplatte.
 * **Grafische Benutzeroberfläche (GUI):** Intuitive Bedienung durch eine moderne und übersichtliche Oberfläche.
 
