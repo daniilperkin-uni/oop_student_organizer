@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
@@ -87,6 +88,8 @@ public class SpeicherManager {
      */
     public void speichereDaten() throws IOException {
         sicherstelleVerzeichnis();
+        sichereBackup(modulPfad);
+        sichereBackup(deadlinePfad);
         schreibeModule();
         schreibeDeadlines();
     }
@@ -102,6 +105,18 @@ public class SpeicherManager {
         deadlines.clear();
         ladeModule();
         ladeDeadlines();
+    }
+
+    /**
+     * Kopiert eine vorhandene Datei nach {@code <name>.bak}, bevor sie
+     * überschrieben wird, damit ein fehlgeschlagener Schreibvorgang den
+     * letzten gültigen Stand nicht zerstört.
+     */
+    static void sichereBackup(Path datei) throws IOException {
+        if (Files.exists(datei)) {
+            Path bak = datei.resolveSibling(datei.getFileName() + ".bak");
+            Files.copy(datei, bak, StandardCopyOption.REPLACE_EXISTING);
+        }
     }
 
     private void sicherstelleVerzeichnis() throws IOException {

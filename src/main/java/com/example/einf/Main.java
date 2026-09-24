@@ -17,7 +17,8 @@ public class Main extends Application {
 		try {
 			speicherManager.ladeDaten();
 		} catch (IOException e) {
-			System.err.println("Fehler beim Laden der Daten: " + e.getMessage());
+			UiDialogs.zeigeFehler("Fehler", "Daten konnten nicht geladen werden",
+					e.getMessage() + "\nDie Anwendung startet mit leeren Daten.");
 		}
 
 		FXMLLoader fxmlLoader = new FXMLLoader(Main.class.getResource("/com/example/einf/views/home-view.fxml"));
@@ -50,7 +51,8 @@ public class Main extends Application {
 		try {
 			speicherManager.speichereDaten();
 		} catch (IOException e) {
-			System.err.println("Fehler beim Speichern der Daten: " + e.getMessage());
+			UiDialogs.zeigeFehler("Fehler", "Daten konnten nicht gespeichert werden",
+					e.getMessage() + "\nDie vorherige Version liegt als .bak-Datei vor.");
 		}
 	}
 

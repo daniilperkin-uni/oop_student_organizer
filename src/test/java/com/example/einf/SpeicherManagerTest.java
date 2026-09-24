@@ -245,4 +245,17 @@ class SpeicherManagerTest {
                 () -> assertTrue(speicher.getModule().isEmpty()),
                 () -> assertTrue(speicher.getDeadlines().isEmpty()));
     }
+
+    @Test
+    @DisplayName("Speichern legt vor dem Überschreiben eine .bak-Kopie an")
+    void speichernErzeugtBackupDerVorherigenDatei(@TempDir Path dir) throws IOException {
+        SpeicherManager sm = new SpeicherManager(dir);
+        sm.speichereDaten();
+        Path module = dir.resolve("module.csv");
+        String vorher = Files.readString(module, StandardCharsets.UTF_8);
+        sm.speichereDaten();
+        Path bak = dir.resolve("module.csv.bak");
+        assertTrue(Files.exists(bak));
+        assertEquals(vorher, Files.readString(bak, StandardCharsets.UTF_8));
+    }
 }
