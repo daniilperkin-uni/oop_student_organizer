@@ -1,4 +1,6 @@
-# Studentischer Organisationshelfer EinfVersuch2
+# Studentischer Organisationshelfer
+
+[![CI](https://github.com/daniilperkin-uni/oop_student_organizer/actions/workflows/ci.yml/badge.svg)](https://github.com/daniilperkin-uni/oop_student_organizer/actions/workflows/ci.yml)
 
 Ein Hilfswerkzeug für den studentischen Alltag, entwickelt in Java. 
 Dieses Programm hilft Studierenden dabei, Fristen besser zu organisieren, Module zu verwalten und den eigenen Leistungsstand (Noten und ECTS) stets im Blick zu behalten. 
@@ -27,4 +29,23 @@ Um das Programm lokal auszuführen, wird Maven benötigt.
 ```bash
 # Projekt kompilieren und ausführen
 .\mvnw.cmd clean javafx:run
+```
+
+## Datenhaltung
+
+Alle Daten liegen im Verzeichnis `~/.studenthelfer` (unter Windows `%USERPROFILE%\.studenthelfer`):
+
+* `module.csv` – Module inkl. ECTS, Semester und Leistung
+* `deadlines.csv` – Fristen
+
+Vor jedem Speichern wird die vorherige Version als `module.csv.bak` bzw. `deadlines.csv.bak` gesichert. Schlägt Laden oder Speichern fehl, zeigt die Anwendung einen Fehlerdialog.
+
+## Kalender-Export (ICS)
+
+Im Tab „Fristen“ exportiert „Als Kalender exportieren (.ics)“ alle Fristen als Ganztagestermine in die Datei `fristen.ics` im gewählten Ordner. Die Datei lässt sich in Outlook, Google Kalender oder Apple Kalender importieren.
+
+## Tests
+
+```bash
+./mvnw -B verify   # Tests + JaCoCo-Report unter target/site/jacoco
 ```
