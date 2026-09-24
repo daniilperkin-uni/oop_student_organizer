@@ -20,4 +20,4 @@ jobs:
       - name: Build and test
         run: |
           chmod +x mvnw
-          ./mvnw clean test
+          ./mvnw -B verify
