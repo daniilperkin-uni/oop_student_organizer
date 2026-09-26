@@ -49,6 +49,24 @@ class ModulVerwaltungTest {
     }
 
     @Test
+    void updateModulErsetztDasModulVollstaendig() {
+        Modul modul = new Modul("Algorithmen", 6, true, Semester.WS24_25);
+        verwaltung.addModul(modul);
+
+        Modul aktualisiert = new Modul(modul.getId(), "Algorithmen 2", 8, true, Semester.SS25);
+        aktualisiert.setLeistung(new Pruefungsleistung(aktualisiert, 1.7));
+        verwaltung.updateModul(aktualisiert);
+
+        // Regression: die frueher feldweise Kopie hielt die alte Instanz am
+        // Leben und liess jedes neu hinzugefuegte Modul-Feld stillschweigend
+        // fallen. Jetzt wird das uebergebene Objekt eingesetzt.
+        Modul ergebnis = verwaltung.getModul(modul.getId());
+        assertSame(aktualisiert, ergebnis);
+        assertSame(aktualisiert, ergebnis.getLeistung().getModul());
+        assertEquals(1.7, ergebnis.getLeistung().getErreichteNote(), 1e-9);
+    }
+
+    @Test
     void deleteModulEntferntDasModul() {
         Modul modul = new Modul("Algorithmen", 6, true, Semester.WS24_25);
         verwaltung.addModul(modul);
