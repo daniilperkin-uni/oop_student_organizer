@@ -268,10 +268,22 @@ public class SpeicherManager {
         }
     }
 
-    /** Maskiert Semikolons und Zeilenumbrüche in einem CSV-Feld. */
+    /**
+     * Maskiert Semikolons und Zeilenumbrüche in einem CSV-Feld.
+     *
+     * <p>{@code \r\n} wird zuerst zu {@code \\n} zusammengezogen, danach ein
+     * einzelnes {@code \n} und schliesslich ein einzelnes {@code \r}: ein
+     * alleinstehendes CR wuerde beim naechsten {@code readLine()} (das auch an
+     * {@code \r} trennt) die Zeile vorzeitig beenden und alle Folgefelder der
+     * Zeile verschieben.</p>
+     */
     private String escapeCsv(String wert) {
         if (wert == null) return "";
-        return wert.replace("\\", "\\\\").replace(TRENNZEICHEN, "\\;").replace("\n", "\\n");
+        return wert.replace("\\", "\\\\")
+                .replace(TRENNZEICHEN, "\\;")
+                .replace("\r\n", "\\n")
+                .replace("\n", "\\n")
+                .replace("\r", "\\n");
     }
 
     /**

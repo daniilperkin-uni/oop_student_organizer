@@ -10,6 +10,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -48,6 +49,27 @@ class IcsExporterTest {
         assertEquals("Abgabe\\, Blatt 3\\; Teil A", IcsExporter.escape("Abgabe, Blatt 3; Teil A"));
         assertEquals("Zeile\\nUmbruch", IcsExporter.escape("Zeile\nUmbruch"));
         assertEquals("Back\\\\slash", IcsExporter.escape("Back\\slash"));
+    }
+
+    @Test
+    @DisplayName("A bare CR is escaped like a line break")
+    void escapingBareCarriageReturn() {
+        // Regression: ein alleinstehendes \r ueberlebte das Escaping und galt
+        // im ICS-Textwert dann als Zeilentrenner.
+        assertEquals("Zeile\\nUmbruch", IcsExporter.escape("Zeile\rUmbruch"));
+        assertEquals("Zeile\\nUmbruch", IcsExporter.escape("Zeile\r\nUmbruch"));
+    }
+
+    @Test
+    @DisplayName("The deadline text appears once, in SUMMARY; no duplicate DESCRIPTION")
+    void noDuplicateDescription() throws Exception {
+        // Regression: getTitel() liefert die Beschreibung, daher trug
+        // DESCRIPTION exakt denselben Text wie SUMMARY.
+        Path ziel = tempDir.resolve("ohne-duplikat.ics");
+        IcsExporter.exportiere(List.of(frist("Abgabe Blatt 3", LocalDate.of(2026, 9, 1))), ziel);
+        String content = Files.readString(ziel);
+        assertTrue(content.contains("SUMMARY:Abgabe Blatt 3\r\n"));
+        assertFalse(content.contains("DESCRIPTION:"));
     }
 
     @Test

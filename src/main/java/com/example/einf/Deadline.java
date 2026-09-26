@@ -4,8 +4,8 @@ import java.time.LocalDate;
 
 /**
  * Repräsentiert eine Frist (Anmeldung, Abgabe oder Klausur) mit optionalem Modulbezug.
- */
-/**
+ *
+ * <p>
  * Note on the modul/modulName dual representation (accepted):
  * A Deadline can be created either with a {@link Modul} reference (then
  * modulName is derived from it) or with just a module name string (then
@@ -13,6 +13,7 @@ import java.time.LocalDate;
  * runtime: modul is the object link used in-memory, modulName is the
  * plain text persisted to CSV. This keeps persistence independent of
  * live Modul objects and is an accepted design trade-off, documented here.
+ * </p>
  */
 public class Deadline {
     

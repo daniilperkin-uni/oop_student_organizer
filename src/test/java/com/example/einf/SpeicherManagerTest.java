@@ -220,6 +220,24 @@ class SpeicherManagerTest {
     }
 
     @Test
+    @DisplayName("verkraftet ein alleinstehendes CR im Text")
+    void crOhneLfImText() throws IOException {
+        // Regression: ein unmaskiertes \r galt beim Einlesen selbst als
+        // Zeilentrenner und zerriss die Zeile in zwei unbrauchbare Fragmente.
+        speicher.addModul(new Modul("Zeile1\rZeile2", 5, true, Semester.SS25));
+        speicher.addDeadline(new Deadline("Frist A\rFrist B", LocalDate.of(2026, 9, 1),
+                DeadlineTyp.ABGABE, "Mathe"));
+
+        SpeicherManager geladen = neuLaden();
+
+        assertAll(
+                () -> assertEquals(1, geladen.getModule().size()),
+                () -> assertEquals("Zeile1\nZeile2", geladen.getModule().get(0).getName()),
+                () -> assertEquals(1, geladen.getDeadlines().size()),
+                () -> assertEquals("Frist A\nFrist B", geladen.getDeadlines().get(0).getBeschreibung()));
+    }
+
+    @Test
     @DisplayName("schreibt beide Dateien mit Kopfzeile")
     void schreibtKopfzeilen() throws IOException {
         speicher.speichereDaten();

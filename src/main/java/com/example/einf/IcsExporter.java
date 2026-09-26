@@ -65,10 +65,10 @@ public final class IcsExporter {
         sb.append("DTSTAMP:").append(stamp).append("\r\n");
         sb.append("DTSTART;VALUE=DATE:").append(datum).append("\r\n");
         sb.append("DTEND;VALUE=DATE:").append(datumEnde).append("\r\n");
+        // getTitel() returns the description (there is no separate title
+        // field any more), so a DESCRIPTION line would only repeat SUMMARY
+        // verbatim - and many calendar clients then show the text twice.
         sb.append("SUMMARY:").append(escape(d.getTitel())).append("\r\n");
-        if (d.getBeschreibung() != null && !d.getBeschreibung().isBlank()) {
-            sb.append("DESCRIPTION:").append(escape(d.getBeschreibung())).append("\r\n");
-        }
         if (d.getModulName() != null && !d.getModulName().isBlank()) {
             // Kategorien sind ein Komma-separiertes Feld - ein Wert ist sicher.
             sb.append("CATEGORIES:").append(escape(d.getModulName())).append("\r\n");
@@ -80,12 +80,20 @@ public final class IcsExporter {
     /**
      * Escaping nach RFC 5545 Abschnitt 3.3.11: Backslash, Semikolon, Komma
      * und Zeilenumbrueche innerhalb von Textwerten.
+     *
+     * <p>
+     * {@code \r\n} wird zuerst behandelt, danach ein einzelnes {@code \n} und
+     * schliesslich ein einzelnes {@code \r}. Ein alleinstehendes CR (z. B. aus
+     * eingefuegtem Text) wuerde in einem ICS-Textwert sonst als
+     * Zeilentrenner missverstanden.
+     * </p>
      */
     static String escape(String text) {
         return text.replace("\\", "\\\\")
                 .replace(";", "\\;")
                 .replace(",", "\\,")
                 .replace("\r\n", "\\n")
-                .replace("\n", "\\n");
+                .replace("\n", "\\n")
+                .replace("\r", "\\n");
     }
 }
