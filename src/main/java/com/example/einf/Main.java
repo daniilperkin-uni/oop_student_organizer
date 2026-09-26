@@ -12,6 +12,10 @@ public class Main extends Application {
 
 	private final SpeicherManager speicherManager = new SpeicherManager();
 
+	// Wired in start(); kept so stop() can flush through the controller's
+	// synced save path (see HomeController.speichereAenderungen()).
+	private HomeController controller;
+
 	@Override
 	public void start(Stage stage) throws IOException {
 		try {
@@ -26,7 +30,7 @@ public class Main extends Application {
 		scene.getStylesheets().add(
 				Objects.requireNonNull(Main.class.getResource("/com/example/einf/styles/app.css")).toExternalForm());
 
-		HomeController controller = fxmlLoader.getController();
+		controller = fxmlLoader.getController();
 
 		ModulVerwaltung modulVerwaltung = new ModulVerwaltung(speicherManager.getModule());
 		controller.setModulVerwaltung(modulVerwaltung);
@@ -36,8 +40,6 @@ public class Main extends Application {
 
 		controller.setSpeicherManager(speicherManager);
 		controller.initializeControllers();
-		controller.initializeSearch();
-		controller.initializeFilters();
 
 		stage.setTitle("Studentischer Organisationshelfer");
 		stage.setScene(scene);
@@ -48,11 +50,13 @@ public class Main extends Application {
 
 	@Override
 	public void stop() {
-		try {
-			speicherManager.speichereDaten();
-		} catch (IOException e) {
-			UiDialogs.zeigeFehler("Fehler", "Daten konnten nicht gespeichert werden",
-					e.getMessage() + "\nDie vorherige Version liegt als .bak-Datei vor.");
+		// Flush through the controller's synced save path instead of writing
+		// the SpeicherManager snapshot directly: the ModulVerwaltung and
+		// DeadlineManager own the live state and have to be pushed into the
+		// store first, otherwise closing the app could persist a stale
+		// snapshot as soon as a mutation forgets its saveChanges() call.
+		if (controller != null) {
+			controller.speichereAenderungen();
 		}
 	}
 

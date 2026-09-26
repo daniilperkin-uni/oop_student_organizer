@@ -123,18 +123,6 @@ public class HomeController {
         }
     }
 
-    public void initializeSearch() {
-        // Kept as a no-op-compatible entry point for Main; the actual search
-        // listener lives in ModuleTabController and is attached in
-        // initializeControllers().
-    }
-
-    public void initializeFilters() {
-        // See initializeSearch(): listeners are attached in
-        // initializeControllers(), which Main calls after both initialize*
-        // methods.
-    }
-
     @FXML
     public void clearSearchButtonOnAction(ActionEvent actionEvent) {
         moduleTab.clearSearch();
@@ -175,7 +163,12 @@ public class HomeController {
         gradesTab.showGradeSimulator();
     }
 
-    private void speichereAenderungen() {
+    /**
+     * Syncs the managers' live state into the SpeicherManager and persists.
+     * Public because Main.stop() routes the shutdown flush through this exact
+     * path, so the close-time save can never write a stale snapshot.
+     */
+    public void speichereAenderungen() {
         if (speicherManager == null) return;
         // The ModulVerwaltung/DeadlineManager own private defensive copies of
         // the lists, so the SpeicherManager no longer shares their live state.
