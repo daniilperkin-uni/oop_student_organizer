@@ -75,10 +75,12 @@ class GradesTabController {
 
         Button okButton = (Button) dialog.getDialogPane().lookupButton(ButtonType.OK);
         okButton.addEventFilter(ActionEvent.ACTION, event -> {
-            double wunsch = EingabeValidierung.parseNote(dialog.getEditor().getText());
-            if (wunsch < 1.0 || wunsch > 4.0) {
-                UiDialogs.zeigeFehler("Eingabefehler", "Ungültige Note",
-                        "Bitte eine Note zwischen 1,0 und 4,0 eingeben.");
+            // Validate first, exactly like the module/deadline dialogs do:
+            // parsing raw dialog text without a guard threw an uncaught
+            // NumberFormatException for "abc" or an empty field.
+            Optional<String> fehler = validiereWunschNote(dialog.getEditor().getText());
+            if (fehler.isPresent()) {
+                UiDialogs.zeigeFehler("Eingabefehler", "Ungültige Note", fehler.get());
                 event.consume();
             }
         });
@@ -118,6 +120,32 @@ class GradesTabController {
         alert.setHeaderText("Notenprojektion");
         alert.setContentText(text.toString());
         alert.showAndWait();
+    }
+
+    /**
+     * Validates the simulator's wish grade. The simulator supports 1,0-4,0
+     * (a passing grade); {@link EingabeValidierung#validiereNote(String)}
+     * alone allows up to 5,0, so the tighter range is checked on top.
+     *
+     * <p>
+     * Package-private and static on purpose: the OK-button event filter that
+     * uses this cannot be unit-tested without booting the JavaFX toolkit, so
+     * the parsing/validation logic lives here where a plain unit test covers
+     * it.
+     * </p>
+     *
+     * @return the error message, or empty when the text is a valid wish grade
+     */
+    static Optional<String> validiereWunschNote(String text) {
+        Optional<String> basis = EingabeValidierung.validiereNote(text);
+        if (basis.isPresent()) {
+            return basis;
+        }
+        double wunsch = EingabeValidierung.parseNote(text);
+        if (wunsch < 1.0 || wunsch > 4.0) {
+            return Optional.of("Bitte eine Note zwischen 1,0 und 4,0 eingeben.");
+        }
+        return Optional.empty();
     }
 
     /**
