@@ -1,0 +1,9 @@
+# Normalize line endings: Windows working tree, Linux CI.
+* text=auto
+
+# Maven wrapper and shell scripts run on Linux CI: always LF, everywhere.
+/mvnw text eol=lf
+*.sh text eol=lf
+
+# Windows batch files: CRLF on checkout.
+*.cmd text eol=crlf
