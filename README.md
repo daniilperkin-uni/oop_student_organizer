@@ -9,9 +9,9 @@ Entwickelt unter Anwendung aller gelernten Konzepte der objektorientierten Progr
 
 ## Kernfunktionen (Die 5 Pfeiler)
 
-* **Verwaltung von Modulen:** Fächer inkl. ECTS und Status anlegen, bearbeiten und verwalten.
-* **Deadline-Tracking:** Anmelde- und Abgabefristen sowie Klausurtermine überwachen (mit Warnfunktion).
-* **Leistungsüberwachung:** Automatische Berechnung des gewichteten Notendurchschnitts und des Studienfortschritts, inkl. ECTS-Fortschrittsdiagramm im Tab „Noten“.
+* **Verwaltung von Modulen:** Fächer inkl. ECTS und Semester anlegen, bearbeiten und verwalten – mit Suche, Filtern (Status, Semester) und Sortierung (Name, ECTS, Note).
+* **Deadline-Tracking:** Anmelde- und Abgabefristen sowie Klausurtermine überwachen; jede Fristenkarte zeigt ihren Status (Offen / Überfällig / Erledigt) farblich an.
+* **Leistungsüberwachung:** Automatischer, nach ECTS gewichteter Notendurchschnitt, ECTS-Fortschrittsdiagramm, Noten-Balkendiagramm je Modul, Semester-Dashboard mit Kennzahlen pro Semester und ein Notensimulator (Projektion des Endschnitts sowie „Welche Note brauche ich noch?“).
 * **Persistente Datenhaltung:** Sicheres Speichern und Laden der Nutzerdaten auf der Festplatte.
 * **Grafische Benutzeroberfläche (GUI):** Intuitive Bedienung durch eine moderne und übersichtliche Oberfläche.
 
@@ -20,16 +20,39 @@ Entwickelt unter Anwendung aller gelernten Konzepte der objektorientierten Progr
 * **Sprache:** Java (JDK 21+)
 * **GUI-Framework:** JavaFX (via FXML)
 * **Build-Tool:** Maven
-* **Architektur:** Model-View-Controller (MVC) zur sauberen Trennung von Daten, Logik und Oberfläche.
+* **Architektur:** Model-View-Controller (MVC) zur sauberen Trennung von Daten, Logik und Oberfläche; `HomeController` koordiniert das Hauptfenster und delegiert je Tab an einen eigenen Controller.
+
+## Voraussetzungen
+
+* **JDK 21 oder neuer** (Entwicklung und CI: Temurin 21)
+* Maven muss nicht installiert sein – der Maven Wrapper (`.mvn/wrapper/`, `mvnw`, `mvnw.cmd`) ist im Projekt enthalten.
 
 ## Starten des Programms
 
-Um das Programm lokal auszuführen, wird Maven benötigt.
-
 ```bash
-# Projekt kompilieren und ausführen
-.\mvnw.cmd clean javafx:run
+.\mvnw.cmd clean javafx:run   # Windows
+./mvnw clean javafx:run       # macOS / Linux
 ```
+
+> Hinweis: Die Anwendung wird ausschließlich über das `javafx:run`-Ziel gestartet. Das gebaute Jar enthält bewusst keinen `Main-Class`-Eintrag und ist nicht per `java -jar` startbar.
+
+## Projektstruktur
+
+* `src/main/java/com/example/einf/` – Domänen- und UI-Klassen
+  * `Main.java` – Einstiegspunkt: lädt die Daten und verdrahtet Controller und Manager
+  * `HomeController.java` – Koordinator des Hauptfensters, delegiert an `ModuleTabController`, `DeadlineTabController` und `GradesTabController`
+  * Domänenklassen: `Modul`, `Semester`, `Leistung` (→ `Pruefungsleistung` / `Studienleistung`), `Deadline`, `DeadlineManager`, `ModulVerwaltung`, `LeistungsRechner`, `SemesterStatistik`, `EctsFortschritt`
+  * Infrastruktur: `SpeicherManager` (CSV-Persistenz), `IcsExporter` (Kalenderexport), `EingabeValidierung`, `UiDialogs`
+* `src/main/resources/com/example/einf/views/home-view.fxml` – FXML-Layout des Hauptfensters
+* `src/main/resources/com/example/einf/styles/app.css` – Stylesheet
+* `src/test/java/com/example/einf/` – 69 JUnit-Tests
+
+## OOP-Konzepte im Code
+
+* **Kapselung:** Die Verwaltungsklassen (`ModulVerwaltung`, `DeadlineManager`, `SpeicherManager`) arbeiten mit defensiven Kopien und geben nur unveränderliche Sichten ihrer Listen heraus – Änderungen laufen ausschließlich über ihre Methoden.
+* **Vererbung & Polymorphismus:** `Leistung` ist abstrakt; `Pruefungsleistung` (Note) und `Studienleistung` (bestanden ja/nein) implementieren `isBestanden()` und `getErreichteNote()` unterschiedlich. Auswertung und Anzeige nutzen diese gemeinsamen Methoden.
+* **Trennung von Logik und Oberfläche (MVC):** Die Berechnungsklassen (`LeistungsRechner`, `SemesterStatistik`, `EctsFortschritt`) sind bewusst JavaFX-frei und dadurch direkt unit-testbar.
+* **Robuste Datenformate:** Der `SpeicherManager` implementiert ein eigenes, escape-fähiges CSV-Format inkl. `.bak`-Sicherung; der `IcsExporter` erzeugt RFC-5545-konforme Kalenderdateien (CRLF-Zeilenenden, Escaping, Ganztagestermine).
 
 ## Datenhaltung
 
@@ -47,5 +70,5 @@ Im Tab „Fristen“ exportiert „Als Kalender exportieren (.ics)“ alle Frist
 ## Tests
 
 ```bash
-./mvnw -B verify   # Tests + JaCoCo-Report unter target/site/jacoco
+./mvnw -B verify   # 69 JUnit-Tests + JaCoCo-Report unter target/site/jacoco
 ```
