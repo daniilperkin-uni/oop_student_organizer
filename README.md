@@ -7,6 +7,10 @@ Dieses Programm hilft Studierenden dabei, Fristen besser zu organisieren, Module
 
 Entwickelt unter Anwendung aller gelernten Konzepte der objektorientierten Programmierung (OOP).
 
+## Live-Showcase
+
+Dieses Projekt hat eine Sektion auf der Uni-Projekte-Showcase-Seite: **[Live im Browser ansehen](https://daniilperkin-uni.github.io/uni-old-projects/#oop_student_organizer)** – mit Screenshots der laufenden App (Module, Fristen, Noten) und einem interaktiven Notensimulator, dessen ECTS-gewichtete Berechnung 1:1 aus dem `LeistungsRechner` dieses Repos portiert ist.
+
 ## Kernfunktionen (Die 5 Pfeiler)
 
 * **Verwaltung von Modulen:** Fächer inkl. ECTS und Semester anlegen, bearbeiten und verwalten – mit Suche, Filtern (Status, Semester) und Sortierung (Name, ECTS, Note).
