@@ -11,6 +11,27 @@ Entwickelt unter Anwendung aller gelernten Konzepte der objektorientierten Progr
 
 Dieses Projekt hat eine Sektion auf der Uni-Projekte-Showcase-Seite: **[Live im Browser ansehen](https://daniilperkin-uni.github.io/uni-old-projects/#oop_student_organizer)** – mit Screenshots der laufenden App (Module, Fristen, Noten) und einem interaktiven Notensimulator, dessen ECTS-gewichtete Berechnung 1:1 aus dem `LeistungsRechner` dieses Repos portiert ist.
 
+## Screenshots
+
+Aufgenommen aus der laufenden App (Demo-Semester, keine echten Nutzerdaten):
+
+| Module | Fristen | Semester-Dashboard |
+| --- | --- | --- |
+| ![Module mit ECTS, Semester und Leistungen](docs/screenshots/modules.webp) | ![Fristenkarten mit Offen/Überfällig/Erledigt](docs/screenshots/deadlines.webp) | ![Semester-Dashboard mit Kennzahlen](docs/screenshots/dashboard.png) |
+
+## Team und mein Beitrag
+
+Das Projekt ist eine **Gruppenarbeit von sieben Personen** im Modul *Einführung in die Informatik*. Die Struktur des Projekts, die erste Deadline-Logik und Teile der Datenhaltung stammen von Teammitgliedern; der Stand auf `main` ist das Ergebnis aller Beiträge.
+
+Meine Beiträge (31 der 48 Commits):
+
+* **Domänenmodell:** `Modul`, `Semester`, `Leistung` mit `Pruefungsleistung`/`Studienleistung`, `ModulVerwaltung`, `LeistungsRechner`
+* **Persistenz:** `SpeicherManager` – escape-fähiges CSV-Format, `.bak`-Sicherung, Formatkompatibilität zu den Altdaten
+* **GUI-Verdrahtung:** `HomeController` und die Aufteilung in `ModuleTabController`, `DeadlineTabController`, `GradesTabController`
+* **Features:** Notensimulator, ECTS-Fortschrittsdiagramm, Semester-Dashboard, ICS-Kalenderexport
+* **Technik:** JavaFX-21-Migration, Maven-/JUnit-Modernisierung, CI-Workflow, Ausbau der Tests für Persistenz und Manager, README und `AGENTS.md`
+
+
 ## Kernfunktionen (Die 5 Pfeiler)
 
 * **Verwaltung von Modulen:** Fächer inkl. ECTS und Semester anlegen, bearbeiten und verwalten – mit Suche, Filtern (Status, Semester) und Sortierung (Name, ECTS, Note).
