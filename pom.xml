@@ -11,7 +11,7 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <javafx.version>21.0.12</javafx.version>
+        <javafx.version>27.0.1</javafx.version>
         <junit.version>5.12.1</junit.version>
     </properties>
 
