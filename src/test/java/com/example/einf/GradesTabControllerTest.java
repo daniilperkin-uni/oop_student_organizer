@@ -51,4 +51,12 @@ class GradesTabControllerTest {
         assertTrue(GradesTabController.validiereWunschNote("1,0").isEmpty());
         assertTrue(GradesTabController.validiereWunschNote("4,0").isEmpty());
     }
+
+    @Test
+    @DisplayName("NaN als Wunschnote wird gemeldet")
+    void nanWirdGemeldet() {
+        // Gleiche Falle wie in EingabeValidierung.validiereNote: NaN besteht
+        // jeden Groessenvergleich und landete sonst im Notensimulator.
+        assertTrue(GradesTabController.validiereWunschNote("NaN").isPresent());
+    }
 }

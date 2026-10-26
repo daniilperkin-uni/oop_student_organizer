@@ -25,4 +25,14 @@ class EingabeValidierungTest {
         assertTrue(EingabeValidierung.validiereNote("1,3").isEmpty());
         assertTrue(EingabeValidierung.validiereNote("5,7").isPresent());
     }
+
+    @Test
+    void validiereNoteLehntNichtEndlicheWerteAb() {
+        // Double.parseDouble("NaN") gelingt, und jeder Größenvergleich mit NaN
+        // ist false - ohne isFinite rutschte NaN bis in die CSV-Datei.
+        assertTrue(EingabeValidierung.validiereNote("NaN").isPresent());
+        assertTrue(EingabeValidierung.validiereNote("nan").isPresent());
+        assertTrue(EingabeValidierung.validiereNote("Infinity").isPresent());
+        assertTrue(EingabeValidierung.validiereNote("-Infinity").isPresent());
+    }
 }

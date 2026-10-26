@@ -38,7 +38,9 @@ public final class EingabeValidierung {
         }
         try {
             double note = Double.parseDouble(text.trim().replace(',', '.'));
-            if (note < 1.0 || note > 5.0) {
+            // NaN/Infinity bestehen jeden Größenvergleich (jeder Vergleich mit
+            // NaN ist false) und würden bis in die CSV-Datei durchrutschen.
+            if (!Double.isFinite(note) || note < 1.0 || note > 5.0) {
                 return Optional.of("Die Note muss zwischen 1,0 und 5,0 liegen.");
             }
             return Optional.empty();

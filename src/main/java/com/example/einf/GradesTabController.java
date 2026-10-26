@@ -142,7 +142,8 @@ class GradesTabController {
             return basis;
         }
         double wunsch = EingabeValidierung.parseNote(text);
-        if (wunsch < 1.0 || wunsch > 4.0) {
+        // Gleiche Falle wie in validiereNote: NaN besteht jeden Vergleich.
+        if (!Double.isFinite(wunsch) || wunsch < 1.0 || wunsch > 4.0) {
             return Optional.of("Bitte eine Note zwischen 1,0 und 4,0 eingeben.");
         }
         return Optional.empty();

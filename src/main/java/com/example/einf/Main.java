@@ -10,19 +10,45 @@ import java.util.Objects;
 
 public class Main extends Application {
 
-	private final SpeicherManager speicherManager = new SpeicherManager();
+	private final SpeicherManager speicherManager;
 
 	// Wired in start(); kept so stop() can flush through the controller's
 	// synced save path (see HomeController.speichereAenderungen()).
 	private HomeController controller;
 
+	/**
+	 * Aktion, die beim Beenden den aktuellen Stand persistiert. Wird in
+	 * start() auf den Controller gesetzt; als Feld, damit der Beenden-Pfad
+	 * ohne JavaFX-Toolkit testbar ist.
+	 */
+	private Runnable beendenAktion;
+
+	/**
+	 * true nur, wenn {@link SpeicherManager#ladeDaten()} beim Start ohne
+	 * Ausnahme durchlief. Nach einem Ladefehler hält die Anwendung nur einen
+	 * leeren Zustand - der darf beim Beenden nicht über die echten Dateien
+	 * geschrieben werden.
+	 */
+	private boolean datenGeladen;
+
+	/** Beim Laden aufgetretene Ausnahme, für den Hinweisdialog in {@link #start(Stage)}. */
+	private IOException ladeFehler;
+
+	/** JavaFX erzeugt die Anwendung über diesen Konstruktor. */
+	public Main() {
+		this(new SpeicherManager());
+	}
+
+	/** Nur für Tests: erlaubt einen Speicherort im Temp-Verzeichnis. */
+	Main(SpeicherManager speicherManager) {
+		this.speicherManager = speicherManager;
+	}
+
 	@Override
 	public void start(Stage stage) throws IOException {
-		try {
-			speicherManager.ladeDaten();
-		} catch (IOException e) {
+		if (!ladeDatenBeimStart()) {
 			UiDialogs.zeigeFehler("Fehler", "Daten konnten nicht geladen werden",
-					e.getMessage() + "\nDie Anwendung startet mit leeren Daten.");
+					ladeFehler.getMessage() + "\nDie Anwendung startet mit leeren Daten.");
 		}
 
 		FXMLLoader fxmlLoader = new FXMLLoader(Main.class.getResource("/com/example/einf/views/home-view.fxml"));
@@ -31,6 +57,7 @@ public class Main extends Application {
 				Objects.requireNonNull(Main.class.getResource("/com/example/einf/styles/app.css")).toExternalForm());
 
 		controller = fxmlLoader.getController();
+		beendenAktion = controller::speichereAenderungen;
 
 		ModulVerwaltung modulVerwaltung = new ModulVerwaltung(speicherManager.getModule());
 		controller.setModulVerwaltung(modulVerwaltung);
@@ -50,14 +77,53 @@ public class Main extends Application {
 
 	@Override
 	public void stop() {
-		// Flush through the controller's synced save path instead of writing
-		// the SpeicherManager snapshot directly: the ModulVerwaltung and
-		// DeadlineManager own the live state and have to be pushed into the
-		// store first, otherwise closing the app could persist a stale
-		// snapshot as soon as a mutation forgets its saveChanges() call.
-		if (controller != null) {
-			controller.speichereAenderungen();
+		speichereBeimBeenden();
+	}
+
+	/**
+	 * Lädt den gespeicherten Stand und merkt sich, ob das vollständig geklappt
+	 * hat. Package-private statt inline in {@link #start(Stage)}, damit der
+	 * Fehlerfall ohne JavaFX-Toolkit testbar ist.
+	 *
+	 * @return true, wenn alle Daten ohne Ausnahme geladen wurden
+	 */
+	boolean ladeDatenBeimStart() {
+		try {
+			speicherManager.ladeDaten();
+			datenGeladen = true;
+			ladeFehler = null;
+		} catch (IOException e) {
+			datenGeladen = false;
+			ladeFehler = e;
 		}
+		return datenGeladen;
+	}
+
+	/**
+	 * Persistiert den Stand beim Beenden - aber nur, wenn das Laden beim Start
+	 * vollständig geklappt hat. Sonst würde der leere In-Memory-Zustand die
+	 * echten Dateien überschreiben: genau der Datenverlust, den der
+	 * Fehlerdialog "startet mit leeren Daten" ankündigt.
+	 *
+	 * <p>Der Flush läuft weiterhin über den Controller-Pfad statt direkt über
+	 * den SpeicherManager-Schnappschuss: die ModulVerwaltung und der
+	 * DeadlineManager halten den Live-Zustand und müssen vorher in den Store
+	 * geschoben werden.</p>
+	 */
+	void speichereBeimBeenden() {
+		if (!datenGeladen) {
+			System.err.println(
+					"Kein Speichern beim Beenden: Die Daten konnten beim Start nicht geladen werden.");
+			return;
+		}
+		if (beendenAktion != null) {
+			beendenAktion.run();
+		}
+	}
+
+	/** Nur für Tests: ersetzt die Aktion, die beim Beenden speichert. */
+	void setBeendenAktion(Runnable beendenAktion) {
+		this.beendenAktion = beendenAktion;
 	}
 
 	public SpeicherManager getSpeicherManager() {

@@ -276,4 +276,99 @@ class SpeicherManagerTest {
         assertTrue(Files.exists(bak));
         assertEquals(vorher, Files.readString(bak, StandardCharsets.UTF_8));
     }
+
+    @Test
+    @DisplayName("ein fehlgeschlagener Schreibvorgang lässt Datei und Backup unversehrt")
+    void fehlgeschlagenerSchreibvorgangErhaeltDateiUndBackup(@TempDir Path dir) throws IOException {
+        SpeicherManager sm = new SpeicherManager(dir);
+        sm.addModul(new Modul("Mathe", 5, true, Semester.SS25));
+        sm.speichereDaten();
+        sm.addModul(new Modul("Physik", 6, true, Semester.SS25));
+        sm.speichereDaten();
+
+        Path modulDatei = dir.resolve("module.csv");
+        Path backup = dir.resolve("module.csv.bak");
+        String gut = Files.readString(modulDatei, StandardCharsets.UTF_8);
+        assertEquals(3, gut.lines().count(), "Kopfzeile plus zwei Module erwartet");
+        assertEquals(2, Files.readString(backup, StandardCharsets.UTF_8).lines().count(),
+                "das Backup stammt noch vom Stand mit einem Modul");
+
+        // Schreibgeschütztes Ziel: der atomare Ersatz scheitert, nachdem die
+        // neue Datei schon vollständig daneben liegt. Vorher hatte
+        // newBufferedWriter(module.csv) die Datei an dieser Stelle bereits
+        // abgeschnitten, und der nächste Lauf kopierte den Rest über das gute .bak.
+        assertTrue(modulDatei.toFile().setWritable(false), "Datei muss schreibgeschützt sein");
+        try {
+            SpeicherManager neu = new SpeicherManager(dir);
+            neu.addModul(new Modul("Chemie", 4, true, Semester.SS25));
+            assertThrows(IOException.class, neu::speichereDaten);
+
+            assertAll(
+                    () -> assertEquals(gut, Files.readString(modulDatei, StandardCharsets.UTF_8)),
+                    // .bak wurde erst rotiert, als die neue Datei komplett war,
+                    // und enthält deshalb den vollständigen alten Stand.
+                    () -> assertEquals(gut, Files.readString(backup, StandardCharsets.UTF_8)),
+                    () -> assertFalse(Files.exists(dir.resolve("module.csv.tmp"))),
+                    () -> assertFalse(Files.exists(dir.resolve("module.csv.bak.tmp"))));
+        } finally {
+            modulDatei.toFile().setWritable(true);
+        }
+
+        // Der Bestand ist weiterhin vollständig lesbar - kein Datenverlust.
+        SpeicherManager geladen = new SpeicherManager(dir);
+        geladen.ladeDaten();
+        assertEquals(List.of("Mathe", "Physik"),
+                geladen.getModule().stream().map(Modul::getName).toList());
+
+        // Auch der nächste erfolgreiche Lauf rotiert keinen Müll nach .bak.
+        SpeicherManager danach = new SpeicherManager(dir);
+        danach.addModul(new Modul("Chemie", 4, true, Semester.SS25));
+        danach.speichereDaten();
+        assertEquals(gut, Files.readString(backup, StandardCharsets.UTF_8));
+    }
+
+    @Test
+    @DisplayName("ein Abbruch mitten im Schreiben lässt die bisherige Datei unversehrt")
+    void abbruchBeimSchreibenErhaeltDieBisherigeDatei(@TempDir Path dir) throws IOException {
+        SpeicherManager sm = new SpeicherManager(dir);
+        sm.addModul(new Modul("Mathe", 5, true, Semester.SS25));
+        sm.speichereDaten();
+        String gut = Files.readString(dir.resolve("module.csv"), StandardCharsets.UTF_8);
+
+        // Ein Modul, dessen Name beim Serialisieren fliegt: der Schreibvorgang
+        // bricht mitten im Inhalt ab. Vorher hatte newBufferedWriter die
+        // Zieldatei an dieser Stelle längst abgeschnitten, übrig blieb nur die
+        // Kopfzeile - und der nächste Lauf kopierte den Rest über das gute .bak.
+        Modul giftig = new Modul("Mathe", 5, true, Semester.SS25) {
+            @Override
+            public String getName() {
+                throw new IllegalStateException("Testfehler beim Schreiben");
+            }
+        };
+        SpeicherManager kaputt = new SpeicherManager(dir);
+        kaputt.addModul(giftig);
+
+        assertThrows(IllegalStateException.class, kaputt::speichereDaten);
+
+        assertAll(
+                () -> assertEquals(gut, Files.readString(dir.resolve("module.csv"), StandardCharsets.UTF_8)),
+                // Kein .bak: rotiert wird erst von einer fertig geschriebenen Datei.
+                () -> assertFalse(Files.exists(dir.resolve("module.csv.bak"))),
+                () -> assertFalse(Files.exists(dir.resolve("module.csv.tmp"))));
+    }
+
+    @Test
+    @DisplayName("schreibt über eine temporäre Datei und lässt keine .tmp-Reste zurück")
+    void atomaresSchreibenLaesstKeineTempDateienZurueck() throws IOException {
+        speicher.addModul(new Modul("Mathe", 5, true, Semester.SS25));
+        speicher.speichereDaten();
+        speicher.speichereDaten();
+
+        try (var dateien = Files.list(verzeichnis)) {
+            assertEquals(List.of(), dateien
+                    .map(p -> p.getFileName().toString())
+                    .filter(name -> name.endsWith(".tmp"))
+                    .toList());
+        }
+    }
 }

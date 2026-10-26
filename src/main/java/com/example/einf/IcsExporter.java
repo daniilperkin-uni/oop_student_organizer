@@ -4,10 +4,13 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.HexFormat;
 import java.util.List;
 
 /**
@@ -55,7 +58,7 @@ public final class IcsExporter {
     private static void appendEvent(StringBuilder sb, Deadline d) {
         String datum = DATUM_FORMAT.format(d.getDatum());
         String datumEnde = DATUM_FORMAT.format(d.getDatum().plusDays(1)); // DTEND exklusiv
-        String uid = "frist-" + datum + "-" + Integer.toHexString(d.hashCode())
+        String uid = "frist-" + datum + "-" + inhaltsKennung(d)
                 + "@studentischer-organisationshelfer";
         String stamp = LocalDateTime.now(ZoneOffset.UTC)
                 .format(DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'"));
@@ -75,6 +78,39 @@ public final class IcsExporter {
         }
         sb.append("TRANSP:TRANSPARENT\r\n");
         sb.append("END:VEVENT\r\n");
+    }
+
+    /**
+     * Stabile Kennung einer Frist fuer die UID.
+     *
+     * <p>
+     * Frueher stand hier {@code Integer.toHexString(d.hashCode())} - und weil
+     * {@link Deadline} weder {@code equals} noch {@code hashCode} definiert,
+     * war das ein Identitaets-Hash: jeder Export erzeugte eine neue UID, und
+     * ein Re-Import der aktualisierten Datei legte die Termine doppelt an,
+     * statt sie zu aktualisieren.
+     * </p>
+     *
+     * <p>
+     * Die Kennung entsteht jetzt aus dem Inhalt (Titel, Datum, Modulname) und
+     * bleibt damit fuer denselben Termin bei jedem Export gleich. Der
+     * SHA-256-Hash wird auf 16 Hex-Zeichen gekuerzt; das reicht bei Weitem,
+     * um Kollisionen zwischen den Fristen eines Nutzers auszuschliessen.
+     * </p>
+     */
+    static String inhaltsKennung(Deadline d) {
+        // Unit Separator als Trenner: kann in keinem der drei Felder vorkommen,
+        // sonst koennten verschiedene Kombinationen denselben Text ergeben.
+        String basis = d.getTitel() + "\u001F" + d.getDatum() + "\u001F"
+                + (d.getModulName() == null ? "" : d.getModulName());
+        try {
+            byte[] hash = MessageDigest.getInstance("SHA-256")
+                    .digest(basis.getBytes(StandardCharsets.UTF_8));
+            return HexFormat.of().formatHex(hash, 0, 8);
+        } catch (NoSuchAlgorithmException e) {
+            // SHA-256 muss in jeder JVM vorhanden sein.
+            throw new IllegalStateException("SHA-256 ist nicht verfuegbar", e);
+        }
     }
 
     /**

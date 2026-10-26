@@ -90,4 +90,49 @@ class IcsExporterTest {
         assertTrue(content.contains("VERSION:2.0"));
         assertTrue(!content.contains("BEGIN:VEVENT"));
     }
+
+    @Test
+    @DisplayName("Two exports of the same deadline produce the same UID")
+    void uidIsStableAcrossExports() throws Exception {
+        // Regression: die UID kam aus d.hashCode(); Deadline definiert weder
+        // equals noch hashCode, also war das ein Identitaets-Hash. Jeder Export
+        // erzeugte damit eine neue UID, und ein Re-Import der aktualisierten
+        // Datei legte den Termin doppelt an, statt ihn zu aktualisieren.
+        Path erste = tempDir.resolve("erst.ics");
+        Path zweite = tempDir.resolve("zweit.ics");
+
+        IcsExporter.exportiere(List.of(frist("Abgabe Blatt 3", LocalDate.of(2026, 9, 1))), erste);
+        // Bewusst eine neue Instanz mit gleichem Inhalt: ein Identitaets-Hash
+        // wuerde hier zwangslaeufig abweichen.
+        IcsExporter.exportiere(List.of(
+                new Deadline("Abgabe Blatt 3", LocalDate.of(2026, 9, 1), DeadlineTyp.ABGABE, "Mathe")), zweite);
+
+        String uid = ersteUid(erste);
+        assertEquals(uid, ersteUid(zweite));
+        assertTrue(uid.endsWith("@studentischer-organisationshelfer"));
+        assertTrue(uid.startsWith("frist-20260901-"));
+    }
+
+    @Test
+    @DisplayName("Different deadlines still get different UIDs")
+    void uidUnterscheidetVerschiedeneFristen() throws Exception {
+        Path ziel = tempDir.resolve("zwei.ics");
+        IcsExporter.exportiere(List.of(
+                frist("Abgabe Blatt 3", LocalDate.of(2026, 9, 1)),
+                frist("Abgabe Blatt 3", LocalDate.of(2026, 9, 2))), ziel);
+
+        List<String> uids = Files.readAllLines(ziel).stream()
+                .filter(zeile -> zeile.startsWith("UID:"))
+                .toList();
+        assertEquals(2, uids.size());
+        assertEquals(2, uids.stream().distinct().count());
+    }
+
+    private static String ersteUid(Path datei) throws java.io.IOException {
+        return Files.readAllLines(datei).stream()
+                .filter(zeile -> zeile.startsWith("UID:"))
+                .findFirst()
+                .map(zeile -> zeile.substring("UID:".length()))
+                .orElseThrow();
+    }
 }

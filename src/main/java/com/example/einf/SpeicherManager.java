@@ -3,7 +3,10 @@ package com.example.einf;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -84,14 +87,18 @@ public class SpeicherManager {
     /**
      * Schreibt den aktuellen Systemzustand (Module und Deadlines) konsistent in CSV-Dateien.
      *
+     * <p>Jede Datei wird zuerst vollständig in eine Nachbardatei
+     * {@code <name>.tmp} geschrieben und erst danach atomar über das Ziel
+     * gezogen. Ein abgebrochener Schreibvorgang kann die bisherige Datei
+     * dadurch nicht mehr zerstören, und die {@code .bak}-Kopie wird nur von
+     * einer vollständig geschriebenen Datei rotiert.</p>
+     *
      * @throws IOException wenn ein Schreibfehler auftritt
      */
     public void speichereDaten() throws IOException {
         sicherstelleVerzeichnis();
-        sichereBackup(modulPfad);
-        sichereBackup(deadlinePfad);
-        schreibeModule();
-        schreibeDeadlines();
+        schreibeAtomar(modulPfad, this::schreibeModule);
+        schreibeAtomar(deadlinePfad, this::schreibeDeadlines);
     }
 
     /**
@@ -111,12 +118,79 @@ public class SpeicherManager {
      * Kopiert eine vorhandene Datei nach {@code <name>.bak}, bevor sie
      * überschrieben wird, damit ein fehlgeschlagener Schreibvorgang den
      * letzten gültigen Stand nicht zerstört.
+     *
+     * <p>Auch die Kopie entsteht über eine temporäre Datei und wird erst
+     * danach an ihren Platz gezogen: ein Abbruch darf das bisherige Backup
+     * nicht durch eine halbe Kopie ersetzen.</p>
      */
     static void sichereBackup(Path datei) throws IOException {
-        if (Files.exists(datei)) {
-            Path bak = datei.resolveSibling(datei.getFileName() + ".bak");
-            Files.copy(datei, bak, StandardCopyOption.REPLACE_EXISTING);
+        if (!Files.exists(datei)) return;
+        Path bak = datei.resolveSibling(datei.getFileName() + ".bak");
+        Path tmp = datei.resolveSibling(datei.getFileName() + ".bak.tmp");
+        // Bewusst kein Files.copy: unter Windows erbt die Kopie das
+        // Schreibschutz-Attribut der Quelle, und eine schreibgeschützte
+        // .bak.tmp ließe sich nicht mehr an ihren Platz ziehen.
+        try (InputStream quelle = Files.newInputStream(datei);
+             OutputStream kopie = Files.newOutputStream(tmp)) {
+            quelle.transferTo(kopie);
         }
+        try {
+            ersetze(tmp, bak);
+        } catch (IOException e) {
+            raeumeAuf(tmp);
+            throw e;
+        }
+    }
+
+    /**
+     * Schreibt den Inhalt über eine temporäre Nachbardatei und ersetzt das Ziel
+     * erst, wenn der Inhalt vollständig auf der Platte liegt.
+     *
+     * <p>Die Reihenfolge ist bewusst: erst die komplette Datei schreiben, dann
+     * die bisherige Zieldatei nach {@code .bak} sichern, dann atomar ersetzen.
+     * Scheitert das Schreiben, bleiben Ziel und Backup unverändert - anders als
+     * bei einem {@code newBufferedWriter(ziel)}, das die Zieldatei sofort
+     * abschneidet und den letzten gültigen Stand vernichtet.</p>
+     */
+    private void schreibeAtomar(Path ziel, InhaltSchreiber inhalt) throws IOException {
+        Path tmp = ziel.resolveSibling(ziel.getFileName() + ".tmp");
+        try {
+            inhalt.schreibe(tmp);
+            sichereBackup(ziel);
+            ersetze(tmp, ziel);
+        } catch (IOException | RuntimeException e) {
+            raeumeAuf(tmp);
+            throw e;
+        }
+    }
+
+    /**
+     * Ersetzt {@code ziel} durch {@code quelle} - atomar, soweit das
+     * Dateisystem das unterstützt.
+     */
+    private static void ersetze(Path quelle, Path ziel) throws IOException {
+        try {
+            Files.move(quelle, ziel, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
+        } catch (AtomicMoveNotSupportedException e) {
+            // Manche Dateisysteme (z. B. einzelne Netzlaufwerke) können nicht
+            // atomar ersetzen; dann bleibt nur der normale Move.
+            Files.move(quelle, ziel, StandardCopyOption.REPLACE_EXISTING);
+        }
+    }
+
+    /** Löscht eine temporäre Datei, ohne den ursprünglichen Fehler zu verdecken. */
+    private static void raeumeAuf(Path tmp) {
+        try {
+            Files.deleteIfExists(tmp);
+        } catch (IOException ignored) {
+            // Aufräumen ist Best Effort; maßgeblich ist der aufrufende Fehler.
+        }
+    }
+
+    /** Schreibt den vollständigen Dateiinhalt nach {@code ziel}. */
+    @FunctionalInterface
+    private interface InhaltSchreiber {
+        void schreibe(Path ziel) throws IOException;
     }
 
     private void sicherstelleVerzeichnis() throws IOException {
@@ -126,8 +200,8 @@ public class SpeicherManager {
         }
     }
 
-    private void schreibeModule() throws IOException {
-        try (BufferedWriter writer = Files.newBufferedWriter(modulPfad, StandardCharsets.UTF_8)) {
+    private void schreibeModule(Path ziel) throws IOException {
+        try (BufferedWriter writer = Files.newBufferedWriter(ziel, StandardCharsets.UTF_8)) {
             writer.write("id;name;ects;istBenotet;semester;leistungTyp;bestanden;note");
             writer.newLine();
             for (Modul m : module) {
@@ -158,8 +232,8 @@ public class SpeicherManager {
         }
     }
 
-    private void schreibeDeadlines() throws IOException {
-        try (BufferedWriter writer = Files.newBufferedWriter(deadlinePfad, StandardCharsets.UTF_8)) {
+    private void schreibeDeadlines(Path ziel) throws IOException {
+        try (BufferedWriter writer = Files.newBufferedWriter(ziel, StandardCharsets.UTF_8)) {
             writer.write("beschreibung;datum;typ;modulName;erledigt");
             writer.newLine();
             for (Deadline d : deadlines) {
