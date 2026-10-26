@@ -293,26 +293,26 @@ class SpeicherManagerTest {
         assertEquals(2, Files.readString(backup, StandardCharsets.UTF_8).lines().count(),
                 "das Backup stammt noch vom Stand mit einem Modul");
 
-        // Schreibgeschütztes Ziel: der atomare Ersatz scheitert, nachdem die
-        // neue Datei schon vollständig daneben liegt. Vorher hatte
-        // newBufferedWriter(module.csv) die Datei an dieser Stelle bereits
-        // abgeschnitten, und der nächste Lauf kopierte den Rest über das gute .bak.
-        assertTrue(modulDatei.toFile().setWritable(false), "Datei muss schreibgeschützt sein");
-        try {
-            SpeicherManager neu = new SpeicherManager(dir);
-            neu.addModul(new Modul("Chemie", 4, true, Semester.SS25));
-            assertThrows(IOException.class, neu::speichereDaten);
+        // Schreibfehler portabel erzwingen: ein Verzeichnis an der Stelle der
+        // temporaeren Datei laesst sich auf keinem Dateisystem als Datei
+        // oeffnen. Der fruehere Weg ueber setWritable(false) funktioniert nur
+        // unter Windows - unter POSIX sagt die Schreibberechtigung der Zieldatei
+        // beim rename nichts aus, deshalb lief der Test in der Linux-CI ins Leere.
+        String backupVorher = Files.readString(backup, StandardCharsets.UTF_8);
+        Path tmpBlockiert = dir.resolve("module.csv.tmp");
+        Files.createDirectory(tmpBlockiert);
 
-            assertAll(
-                    () -> assertEquals(gut, Files.readString(modulDatei, StandardCharsets.UTF_8)),
-                    // .bak wurde erst rotiert, als die neue Datei komplett war,
-                    // und enthält deshalb den vollständigen alten Stand.
-                    () -> assertEquals(gut, Files.readString(backup, StandardCharsets.UTF_8)),
-                    () -> assertFalse(Files.exists(dir.resolve("module.csv.tmp"))),
-                    () -> assertFalse(Files.exists(dir.resolve("module.csv.bak.tmp"))));
-        } finally {
-            modulDatei.toFile().setWritable(true);
-        }
+        SpeicherManager neu = new SpeicherManager(dir);
+        neu.addModul(new Modul("Chemie", 4, true, Semester.SS25));
+        assertThrows(IOException.class, neu::speichereDaten);
+
+        assertAll(
+                () -> assertEquals(gut, Files.readString(modulDatei, StandardCharsets.UTF_8)),
+                // Das Backup wurde gar nicht erst rotiert: der Fehler trat vor
+                // dem Sichern auf, also steht dort weiterhin der vorherige Stand.
+                () -> assertEquals(backupVorher, Files.readString(backup, StandardCharsets.UTF_8)),
+                () -> assertFalse(Files.exists(tmpBlockiert)),
+                () -> assertFalse(Files.exists(dir.resolve("module.csv.bak.tmp"))));
 
         // Der Bestand ist weiterhin vollständig lesbar - kein Datenverlust.
         SpeicherManager geladen = new SpeicherManager(dir);
