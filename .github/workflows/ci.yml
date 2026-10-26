@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [master, main]
 
+# Der Workflow liest nur das Repository; mehr braucht der Build nicht.
+# Ohne diesen Block erbte GITHUB_TOKEN die (moeglicherweise weitreichende)
+# Standardeinstellung des Repositories.
+permissions:
+  contents: read
+
 jobs:
   build:
     name: Build & Test

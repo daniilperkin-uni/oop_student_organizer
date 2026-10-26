@@ -95,34 +95,38 @@
       </Tab>
       <Tab closable="false" text="Noten" onSelectionChanged="#onGradesTabSelected">
         <content>
-          <VBox alignment="TOP_CENTER" spacing="20">
-              <padding>
+          <ScrollPane fitToWidth="true" hbarPolicy="NEVER">
+            <content>
+              <VBox alignment="TOP_CENTER" spacing="20">
+                <padding>
                   <Insets top="20" right="20" bottom="20" left="20" />
-              </padding>
-              <HBox alignment="CENTER" spacing="50">
+                </padding>
+                <HBox alignment="CENTER" spacing="50">
                   <VBox alignment="CENTER" spacing="5">
-                      <Label text="Aktueller Notendurchschnitt:" styleClass="stat-label"/>
-                      <Label fx:id="gpaLabel" text="0.0" styleClass="stat-value, stat-value-gpa"/>
+                    <Label text="Aktueller Notendurchschnitt:" styleClass="stat-label"/>
+                    <Label fx:id="gpaLabel" text="0.0" styleClass="stat-value, stat-value-gpa"/>
                   </VBox>
                   <VBox alignment="CENTER" spacing="5">
-                      <Label text="Erreichte ECTS:" styleClass="stat-label"/>
-                      <Label fx:id="ectsLabel" text="0 / 0" styleClass="stat-value, stat-value-ects"/>
+                    <Label text="Erreichte ECTS:" styleClass="stat-label"/>
+                    <Label fx:id="ectsLabel" text="0 / 0" styleClass="stat-value, stat-value-ects"/>
                   </VBox>
-              </HBox>
-              <HBox alignment="CENTER" spacing="20">
+                </HBox>
+                <HBox alignment="CENTER" spacing="20">
                   <Button onAction="#onSimulateGrades" mnemonicParsing="false" text="Notensimulator öffnen" />
                   <Button onAction="#onShowSemesterDashboard" mnemonicParsing="false" text="Semester-Dashboard" />
-              </HBox>
-              <PieChart fx:id="ectsChart" title="ECTS-Fortschritt" prefHeight="300.0" prefWidth="600.0" legendVisible="true"/>
-              <BarChart fx:id="gradesChart" prefHeight="400.0" prefWidth="600.0">
-                <xAxis>
-                  <CategoryAxis side="BOTTOM" label="Module"/>
-                </xAxis>
-                <yAxis>
-                  <NumberAxis side="LEFT" label="Note" upperBound="5.0" tickUnit="1.0"/>
-                </yAxis>
-              </BarChart>
-          </VBox>
+                </HBox>
+                <PieChart fx:id="ectsChart" title="ECTS-Fortschritt" prefHeight="300.0" prefWidth="600.0" legendVisible="true"/>
+                <BarChart fx:id="gradesChart" prefHeight="400.0" prefWidth="600.0">
+                  <xAxis>
+                    <CategoryAxis side="BOTTOM" label="Module"/>
+                  </xAxis>
+                  <yAxis>
+                    <NumberAxis side="LEFT" label="Note" upperBound="5.0" tickUnit="1.0"/>
+                  </yAxis>
+                </BarChart>
+              </VBox>
+            </content>
+          </ScrollPane>
         </content>
       </Tab>
    </tabs>

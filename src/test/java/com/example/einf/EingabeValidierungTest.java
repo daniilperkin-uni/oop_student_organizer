@@ -21,6 +21,18 @@ class EingabeValidierungTest {
     }
 
     @Test
+    void validiereEctsHatEineObergrenze() {
+        // Regression: eine vertippte Ziffer (60 statt 6) machte ein Modul zum
+        // Schwergewicht und verzerrte jeden ECTS-gewichteten Schnitt.
+        assertTrue(EingabeValidierung.validiereEcts("30").isEmpty(), "30 ECTS sind zulaessig");
+        assertTrue(EingabeValidierung.validiereEcts("31").isPresent());
+        assertTrue(EingabeValidierung.validiereEcts("60").isPresent());
+        assertTrue(EingabeValidierung.validiereEcts("999").isPresent());
+        assertEquals("ECTS müssen zwischen 1 und 30 liegen.",
+                EingabeValidierung.validiereEcts("60").orElseThrow());
+    }
+
+    @Test
     void validiereNote() {
         assertTrue(EingabeValidierung.validiereNote("1,3").isEmpty());
         assertTrue(EingabeValidierung.validiereNote("5,7").isPresent());

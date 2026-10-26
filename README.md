@@ -23,7 +23,7 @@ Aufgenommen aus der laufenden App (Demo-Semester, keine echten Nutzerdaten):
 
 Das Projekt ist eine **Gruppenarbeit von sieben Personen** im Modul *Einführung in die Informatik*. Die Struktur des Projekts, die erste Deadline-Logik und Teile der Datenhaltung stammen von Teammitgliedern; der Stand auf `main` ist das Ergebnis aller Beiträge.
 
-Meine Beiträge (31 der 48 Commits):
+Meine Beiträge (38 der 57 Commits auf `main`, rund zwei Drittel):
 
 * **Domänenmodell:** `Modul`, `Semester`, `Leistung` mit `Pruefungsleistung`/`Studienleistung`, `ModulVerwaltung`, `LeistungsRechner`
 * **Persistenz:** `SpeicherManager` – escape-fähiges CSV-Format, `.bak`-Sicherung, Formatkompatibilität zu den Altdaten
@@ -70,14 +70,14 @@ Meine Beiträge (31 der 48 Commits):
   * Infrastruktur: `SpeicherManager` (CSV-Persistenz), `IcsExporter` (Kalenderexport), `EingabeValidierung`, `UiDialogs`
 * `src/main/resources/com/example/einf/views/home-view.fxml` – FXML-Layout des Hauptfensters
 * `src/main/resources/com/example/einf/styles/app.css` – Stylesheet
-* `src/test/java/com/example/einf/` – 69 JUnit-Tests
+* `src/test/java/com/example/einf/` – 82 JUnit-Tests
 
 ## OOP-Konzepte im Code
 
 * **Kapselung:** Die Verwaltungsklassen (`ModulVerwaltung`, `DeadlineManager`, `SpeicherManager`) arbeiten mit defensiven Kopien und geben nur unveränderliche Sichten ihrer Listen heraus – Änderungen laufen ausschließlich über ihre Methoden.
 * **Vererbung & Polymorphismus:** `Leistung` ist abstrakt; `Pruefungsleistung` (Note) und `Studienleistung` (bestanden ja/nein) implementieren `isBestanden()` und `getErreichteNote()` unterschiedlich. Auswertung und Anzeige nutzen diese gemeinsamen Methoden.
 * **Trennung von Logik und Oberfläche (MVC):** Die Berechnungsklassen (`LeistungsRechner`, `SemesterStatistik`, `EctsFortschritt`) sind bewusst JavaFX-frei und dadurch direkt unit-testbar.
-* **Robuste Datenformate:** Der `SpeicherManager` implementiert ein eigenes, escape-fähiges CSV-Format inkl. `.bak`-Sicherung; der `IcsExporter` erzeugt RFC-5545-konforme Kalenderdateien (CRLF-Zeilenenden, Escaping, Ganztagestermine).
+* **Robuste Datenformate:** Der `SpeicherManager` implementiert ein eigenes, escape-fähiges CSV-Format inkl. `.bak`-Sicherung; der `IcsExporter` erzeugt RFC-5545-konforme Kalenderdateien (CRLF-Zeilenenden, Escaping, Zeilenfaltung bei 75 Oktetten, Ganztagestermine).
 
 ## Datenhaltung
 
@@ -95,5 +95,5 @@ Im Tab „Fristen“ exportiert „Als Kalender exportieren (.ics)“ alle Frist
 ## Tests
 
 ```bash
-./mvnw -B verify   # 69 JUnit-Tests + JaCoCo-Report unter target/site/jacoco
+./mvnw -B verify   # 82 JUnit-Tests + JaCoCo-Report und Coverage-Schwelle (42 % Zeilen) unter target/site/jacoco
 ```

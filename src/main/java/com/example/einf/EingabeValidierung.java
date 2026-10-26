@@ -8,6 +8,9 @@ import java.util.Optional;
  */
 public final class EingabeValidierung {
 
+    /** Obergrenze fuer die ECTS eines einzelnen Moduls. */
+    private static final int MAX_ECTS = 30;
+
     private EingabeValidierung() {}
 
     public static Optional<String> validiereModulName(String name) {
@@ -23,8 +26,12 @@ public final class EingabeValidierung {
         }
         try {
             int ects = Integer.parseInt(text.trim());
-            if (ects <= 0) {
-                return Optional.of("ECTS müssen größer als 0 sein.");
+            // 30 ist die Obergrenze eines einzelnen Moduls. Ohne sie machte
+            // eine vertippte Ziffer (z. B. 60 statt 6) ein Modul zum
+            // Schwergewicht und verzerrte jeden ECTS-gewichteten Schnitt und
+            // den ECTS-Fortschritt dauerhaft.
+            if (ects <= 0 || ects > MAX_ECTS) {
+                return Optional.of("ECTS müssen zwischen 1 und " + MAX_ECTS + " liegen.");
             }
             return Optional.empty();
         } catch (NumberFormatException e) {

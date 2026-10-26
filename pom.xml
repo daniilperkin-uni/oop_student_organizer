@@ -75,6 +75,37 @@
                         <phase>verify</phase>
                         <goals><goal>report</goal></goals>
                     </execution>
+                    <!--
+                        Echte Coverage-Schwelle statt eines Reports, den niemand
+                        liest: gemessen am 2026-10-26 ueber den gesamten Bundle
+                        43,8 % Zeilenabdeckung (518 von 1184 Zeilen). Die
+                        Domaenenschicht liegt bei etwa 90 %, die UI-Schicht
+                        (ModuleTabController, DeadlineTabController,
+                        HomeController, UiDialogs) bei 0 %, weil es keinen
+                        JavaFX-/FXML-Testharness gibt. Die Schwelle 0,42 liegt
+                        bewusst knapp darunter: sie faellt bei echten Rueckschritten
+                        auf, ohne den Build fuer die ungetestete UI scheitern zu
+                        lassen. Sobald UI-Tests existieren, gehoert sie angehoben.
+                    -->
+                    <execution>
+                        <id>check</id>
+                        <phase>verify</phase>
+                        <goals><goal>check</goal></goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>LINE</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.42</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
             <plugin>

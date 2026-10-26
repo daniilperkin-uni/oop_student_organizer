@@ -4,6 +4,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
@@ -126,6 +127,65 @@ class IcsExporterTest {
                 .toList();
         assertEquals(2, uids.size());
         assertEquals(2, uids.stream().distinct().count());
+    }
+
+    @Test
+    @DisplayName("A SUMMARY longer than 75 octets is folded with CRLF + space")
+    void langeSummaryWirdGefaltet() throws Exception {
+        // Regression: der Export schrieb eine Zeile mit weit mehr als 75
+        // Oktetten; strenge Parser lehnen das ab oder schneiden den Text ab.
+        String titel = "Abgabe der Projektarbeit im Modul Softwaretechnik inklusive "
+                + "schriftlicher Ausarbeitung und Praesentation";
+        assertTrue(titel.length() > 75);
+
+        Path ziel = tempDir.resolve("gefaltet.ics");
+        IcsExporter.exportiere(List.of(frist(titel, LocalDate.of(2026, 9, 1))), ziel);
+        String inhalt = Files.readString(ziel);
+
+        // Jede physische Zeile bleibt innerhalb der 75-Oktett-Grenze.
+        for (String zeile : inhalt.split("\r\n", -1)) {
+            assertTrue(zeile.getBytes(StandardCharsets.UTF_8).length <= 75,
+                    "Zeile zu lang: " + zeile);
+        }
+        // Gefaltet wird mit CRLF + genau einem Leerzeichen ...
+        assertTrue(inhalt.contains("\r\n "));
+        // ... und laesst sich verlustfrei wieder zusammensetzen.
+        assertTrue(inhalt.replace("\r\n ", "").contains("SUMMARY:" + titel + "\r\n"));
+        // Keine nackten LF: der RFC verlangt CRLF.
+        assertFalse(inhalt.replace("\r\n", "").contains("\n"));
+    }
+
+    @Test
+    @DisplayName("falte() fills 75 octets, then 74 per continuation line")
+    void falteHaeltDieGrenzenGenauEin() {
+        String zeile = "A".repeat(150);
+        String gefaltet = IcsExporter.falte(zeile);
+        String[] teile = gefaltet.split("\r\n", -1);
+        assertEquals(75, teile[0].length());
+        assertEquals(75, teile[1].length()); // ein Leerzeichen + 74 Zeichen
+        assertTrue(teile[1].startsWith(" "));
+        // Das letzte CRLF bleibt beim Entfalten stehen, weil ihm kein
+        // Leerzeichen folgt - es ist das Zeilenende der logischen Zeile.
+        assertEquals(zeile + "\r\n", gefaltet.replace("\r\n ", ""));
+    }
+
+    @Test
+    @DisplayName("Folding never splits a multi-byte UTF-8 character")
+    void faltungTrenntKeineUmlaute() throws Exception {
+        // "SUMMARY:" belegt 8 Oktette, 66 ASCII-Zeichen bringen die Zeile auf
+        // 74; das folgende "ä" liegt auf den Oktetten 74 und 75. Ein Schnitt
+        // bei 75 laege mitten im Zeichen und erzeugte beim Entfalten ein
+        // Ersatzzeichen statt des Umlauts.
+        String titel = "x".repeat(66) + "ä" + "y".repeat(20);
+        Path ziel = tempDir.resolve("umlaut.ics");
+        IcsExporter.exportiere(List.of(frist(titel, LocalDate.of(2026, 9, 1))), ziel);
+        String inhalt = Files.readString(ziel);
+
+        for (String zeile : inhalt.split("\r\n", -1)) {
+            assertTrue(zeile.getBytes(StandardCharsets.UTF_8).length <= 75,
+                    "Zeile zu lang: " + zeile);
+        }
+        assertTrue(inhalt.replace("\r\n ", "").contains("SUMMARY:" + titel));
     }
 
     private static String ersteUid(Path datei) throws java.io.IOException {
