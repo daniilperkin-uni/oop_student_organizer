@@ -197,6 +197,7 @@ public final class IcsExporter {
      * </p>
      */
     static String escape(String text) {
+        if (text == null) return "";
         return text.replace("\\", "\\\\")
                 .replace(";", "\\;")
                 .replace(",", "\\,")

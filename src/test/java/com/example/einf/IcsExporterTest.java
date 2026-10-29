@@ -2,8 +2,10 @@ package com.example.einf;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -194,5 +196,20 @@ class IcsExporterTest {
                 .findFirst()
                 .map(zeile -> zeile.substring("UID:".length()))
                 .orElseThrow();
+    }
+
+    @Test
+    @DisplayName("escape(null) liefert einen leeren String statt einer NullPointerException")
+    void escapeHandlesNull() {
+        assertEquals("", assertDoesNotThrow(() -> IcsExporter.escape(null)));
+    }
+
+    @Test
+    @DisplayName("Ein Termin ohne Beschreibung laesst den Export nicht scheitern")
+    void exportMitNullBeschreibung(@TempDir Path tempDir) throws IOException {
+        Deadline ohneText = new Deadline(null, LocalDate.of(2026, 9, 1), DeadlineTyp.ABGABE, "Mathe");
+        Path ziel = tempDir.resolve("test.ics");
+        assertDoesNotThrow(() -> IcsExporter.exportiere(List.of(ohneText), ziel));
+        assertTrue(Files.exists(ziel));
     }
 }
