@@ -23,7 +23,7 @@ Aufgenommen aus der laufenden App (Demo-Semester, keine echten Nutzerdaten):
 
 Das Projekt ist eine **Gruppenarbeit von sieben Personen** im Modul *Einführung in die Informatik*. Die Struktur des Projekts, die erste Deadline-Logik und Teile der Datenhaltung stammen von Teammitgliedern; der Stand auf `main` ist das Ergebnis aller Beiträge.
 
-Meine Beiträge (38 der 57 Commits auf `main`, rund zwei Drittel):
+Meine Beiträge (rund zwei Drittel der Commits auf `main`; exakt nachzählen mit `git shortlog -sn HEAD`):
 
 * **Domänenmodell:** `Modul`, `Semester`, `Leistung` mit `Pruefungsleistung`/`Studienleistung`, `ModulVerwaltung`, `LeistungsRechner`
 * **Persistenz:** `SpeicherManager` – escape-fähiges CSV-Format, `.bak`-Sicherung, Formatkompatibilität zu den Altdaten
@@ -70,7 +70,7 @@ Meine Beiträge (38 der 57 Commits auf `main`, rund zwei Drittel):
   * Infrastruktur: `SpeicherManager` (CSV-Persistenz), `IcsExporter` (Kalenderexport), `EingabeValidierung`, `UiDialogs`
 * `src/main/resources/com/example/einf/views/home-view.fxml` – FXML-Layout des Hauptfensters
 * `src/main/resources/com/example/einf/styles/app.css` – Stylesheet
-* `src/test/java/com/example/einf/` – 82 JUnit-Tests
+* `src/test/java/com/example/einf/` – 97 JUnit-Tests in 14 Testklassen
 
 ## OOP-Konzepte im Code
 
@@ -95,5 +95,5 @@ Im Tab „Fristen“ exportiert „Als Kalender exportieren (.ics)“ alle Frist
 ## Tests
 
 ```bash
-./mvnw -B verify   # 82 JUnit-Tests + JaCoCo-Report und Coverage-Schwelle (42 % Zeilen) unter target/site/jacoco
+./mvnw -B verify   # 97 JUnit-Tests + JaCoCo-Report und Coverage-Schwelle (42 % Zeilen) unter target/site/jacoco
 ```
