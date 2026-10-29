@@ -3,6 +3,8 @@ package com.example.einf;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import java.io.PrintStream;
+import java.io.ByteArrayOutputStream;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
@@ -370,5 +372,28 @@ class SpeicherManagerTest {
                     .filter(name -> name.endsWith(".tmp"))
                     .toList());
         }
+    }
+
+    @Test
+    @DisplayName("Modulzeile mit unerwarteter Spaltenzahl wird gemeldet statt verschluckt")
+    void unerwarteteSpaltenzahlWirdGemeldet(@TempDir Path tempDir) throws IOException {
+        // Sechs Spalten: weder Altformat (4) noch aktuelles Format (>=8). Frueher
+        // lieferte der Parser null und der Lader uebersprang die Zeile stumm -
+        // beim naechsten Speichern war sie dann endgueltig weg.
+        Files.writeString(tempDir.resolve("module.csv"), String.join("\n",
+                "id;name;ects;istBenotet;semester;leistungTyp;bestanden;note",
+                "mod1;Informatik;6;true;WS24_25;PRUEFUNG",
+                ""), StandardCharsets.UTF_8);
+
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        PrintStream original = System.err;
+        System.setErr(new PrintStream(err));
+        try {
+            new SpeicherManager(tempDir).ladeDaten();
+        } finally {
+            System.setErr(original);
+        }
+
+        assertTrue(err.toString(StandardCharsets.UTF_8).contains("Überspringe fehlerhafte Modulzeile"));
     }
 }

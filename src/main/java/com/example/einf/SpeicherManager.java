@@ -308,7 +308,9 @@ public class SpeicherManager {
             }
             return m;
         }
-        return null;
+        // Nicht stumm verwerfen: der Aufrufer loggt die Zeile, damit ein
+        // abgeschnittener Datensatz nicht beim naechsten Speichern verschwindet.
+        throw new IllegalArgumentException("Unerwartete Spaltenzahl: " + teile.size());
     }
 
     private void ladeDeadlines() throws IOException {
