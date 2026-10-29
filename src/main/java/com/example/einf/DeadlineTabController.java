@@ -4,6 +4,7 @@ import javafx.event.ActionEvent;
 import javafx.geometry.Insets;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.ButtonType;
@@ -214,6 +215,7 @@ class DeadlineTabController {
             existing.setDatum(updated.getDatum());
             existing.setTyp(updated.getTyp());
             existing.setModulName(updated.getModulName());
+            existing.setErledigt(updated.istErledigt());
             refreshDeadlineGrid();
             saveChanges();
         });
@@ -246,11 +248,14 @@ class DeadlineTabController {
         TextField modulNameField = new TextField();
         modulNameField.setPromptText("Modulname (optional)");
 
+        CheckBox erledigtBox = new CheckBox("Erledigt");
+
         if (isEdit) {
             beschreibungField.setText(existing.getBeschreibung());
             datePicker.setValue(existing.getDatum());
             typBox.setValue(existing.getTyp());
             modulNameField.setText(existing.getModulName());
+            erledigtBox.setSelected(existing.istErledigt());
         }
 
         grid.add(new Label("Beschreibung:"), 0, 0);
@@ -261,6 +266,10 @@ class DeadlineTabController {
         grid.add(typBox, 1, 2);
         grid.add(new Label("Modulname:"), 0, 3);
         grid.add(modulNameField, 1, 3);
+        if (isEdit) {
+            grid.add(new Label("Status:"), 0, 4);
+            grid.add(erledigtBox, 1, 4);
+        }
 
         dialog.getDialogPane().setContent(grid);
 
@@ -282,11 +291,15 @@ class DeadlineTabController {
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton != saveButtonType) return null;
 
-            return new Deadline(
+            Deadline neu = new Deadline(
                     beschreibungField.getText().trim(),
                     datePicker.getValue(),
                     typBox.getValue(),
                     modulNameField.getText().trim());
+            if (isEdit) {
+                neu.setErledigt(erledigtBox.isSelected());
+            }
+            return neu;
         });
 
         return dialog.showAndWait();

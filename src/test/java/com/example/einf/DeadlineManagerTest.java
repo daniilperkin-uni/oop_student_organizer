@@ -122,4 +122,11 @@ class DeadlineManagerTest {
         assertEquals(4, manager.getAllDeadlinesSortiert().size(),
                 "Das Leeren der Ergebnisliste darf den Bestand nicht verändern.");
     }
+
+    @Test
+    @DisplayName("addDeadline(null) wird abgelehnt wie deleteDeadline(null)")
+    void addDeadlineNullWirdAbgelehnt() {
+        DeadlineManager manager = new DeadlineManager();
+        assertThrows(IllegalArgumentException.class, () -> manager.addDeadline(null));
+    }
 }

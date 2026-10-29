@@ -28,6 +28,7 @@ public class DeadlineManager {
     }
 
     public void addDeadline(Deadline deadline){
+        if (deadline == null) throw new IllegalArgumentException("Frist darf nicht null sein.");
         deadlines.add(deadline);
     }
 
