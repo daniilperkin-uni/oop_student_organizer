@@ -33,6 +33,8 @@ import java.util.Optional;
 class ModuleTabController {
 
     private static final String ALLE = "Alle";
+    private static final String BESTANDEN = "Bestanden";
+    private static final String NICHT_BESTANDEN = "Nicht bestanden";
     private static final String ALLE_SEMESTER = "Alle Semester";
 
     private FlowPane moduleGrid;
@@ -98,7 +100,7 @@ class ModuleTabController {
 
     void initializeFilters() {
         if (statusFilterBox != null) {
-            statusFilterBox.getItems().addAll(ALLE, "Bestanden", "Nicht bestanden");
+            statusFilterBox.getItems().addAll(ALLE, BESTANDEN, NICHT_BESTANDEN);
             statusFilterBox.setValue(ALLE);
             statusFilterBox.valueProperty().addListener((obs, oldVal, newVal) -> refreshModuleGrid());
         }
@@ -163,10 +165,24 @@ class ModuleTabController {
     }
 
     private boolean matchesStatusFilter(Modul m) {
-        String filter = statusFilterBox == null ? null : statusFilterBox.getValue();
+        return matchesStatus(m, statusFilterBox == null ? null : statusFilterBox.getValue());
+    }
+
+    /**
+     * Statusfilter, JavaFX-frei und damit testbar.
+     *
+     * <p>
+     * Ohne Leistung ist ein Modul weder bestanden noch durchgefallen - es darf in
+     * keinem der beiden Filter auftauchen. Vorher galt {@code !bestanden}, wodurch
+     * "Nicht bestanden" auch alle offenen Module zeigte.
+     * </p>
+     */
+    static boolean matchesStatus(Modul m, String filter) {
         if (filter == null || ALLE.equals(filter)) return true;
-        boolean bestanden = m.getLeistung() != null && m.getLeistung().isBestanden();
-        return "Bestanden".equals(filter) == bestanden;
+        if (m.getLeistung() == null) return false;
+        if (BESTANDEN.equals(filter)) return m.getLeistung().isBestanden();
+        if (NICHT_BESTANDEN.equals(filter)) return !m.getLeistung().isBestanden();
+        return true;
     }
 
     private boolean matchesSemesterFilter(Modul m) {
@@ -176,16 +192,39 @@ class ModuleTabController {
     }
 
     private Comparator<Modul> aktuellerModulComparator() {
-        String field = sortFieldBox == null ? null : sortFieldBox.getValue();
-        Comparator<Modul> comparator = switch (field == null ? "Name" : field) {
-            case "ECTS" -> Comparator.comparingInt(Modul::getEcts);
-            case "Note" -> Comparator.comparingDouble(this::noteFuerSortierung);
-            default -> Comparator.comparing(Modul::getName, String.CASE_INSENSITIVE_ORDER);
-        };
-        return moduleSortDescending ? comparator.reversed() : comparator;
+        return sortierung(sortFieldBox == null ? null : sortFieldBox.getValue(), moduleSortDescending);
     }
 
-    private double noteFuerSortierung(Modul m) {
+    /**
+     * Sortierung der Modulliste, JavaFX-frei und damit testbar.
+     *
+     * <p>
+     * Module ohne Note haben keinen Sortierwert. Sie bleiben in beiden Richtungen
+     * am Ende: ein simples {@code reversed()} auf einem Sentinel wie
+     * {@code Double.MAX_VALUE} zog sie sonst nach oben.
+     * </p>
+     */
+    static Comparator<Modul> sortierung(String field, boolean descending) {
+        if ("Note".equals(field)) {
+            Comparator<Modul> byNote = Comparator.comparingDouble(ModuleTabController::noteFuerSortierung);
+            if (descending) {
+                byNote = byNote.reversed();
+            }
+            return Comparator.comparing((Modul m) -> !hatNote(m)).thenComparing(byNote);
+        }
+
+        Comparator<Modul> comparator = switch (field == null ? "Name" : field) {
+            case "ECTS" -> Comparator.comparingInt(Modul::getEcts);
+            default -> Comparator.comparing(Modul::getName, String.CASE_INSENSITIVE_ORDER);
+        };
+        return descending ? comparator.reversed() : comparator;
+    }
+
+    private static boolean hatNote(Modul m) {
+        return m.getLeistung() instanceof Pruefungsleistung;
+    }
+
+    private static double noteFuerSortierung(Modul m) {
         if (m.getLeistung() instanceof Pruefungsleistung p) {
             return p.getErreichteNote();
         }
