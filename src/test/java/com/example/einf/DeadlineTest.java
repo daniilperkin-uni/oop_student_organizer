@@ -49,4 +49,15 @@ class DeadlineTest {
         assertEquals(DeadlineStatus.UEBERFAELLIG, vergangeneSchaltjahresDeadline.getStatus());
         assertEquals(DeadlineStatus.OFFEN, zukuenftigeSchaltjahresDeadline.getStatus());
     }
+
+    @Test
+    void gleicheWerteBedeutenGleicheFrist() {
+        Deadline a = new Deadline("Abgabe 1", LocalDate.of(2026, 9, 1), DeadlineTyp.ABGABE, "Mathe");
+        Deadline b = new Deadline("Abgabe 1", LocalDate.of(2026, 9, 1), DeadlineTyp.ABGABE, "Mathe");
+        Deadline c = new Deadline("Abgabe 2", LocalDate.of(2026, 9, 1), DeadlineTyp.ABGABE, "Mathe");
+
+        assertEquals(a, b);
+        assertEquals(a.hashCode(), b.hashCode());
+        assertNotEquals(a, c);
+    }
 }

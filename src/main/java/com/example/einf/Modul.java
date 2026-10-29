@@ -49,6 +49,18 @@ public class Modul {
     public void setLeistung(Leistung leistung) { this.leistung = leistung; }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Modul other)) return false;
+        return id != null && id.equals(other.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return id == null ? 0 : id.hashCode();
+    }
+
+    @Override
     public String toString() {
         return "Modul{id='" + id + "', name='" + name + "', ects=" + ects + 
                ", istBenotet=" + istBenotet + ", semester=" + semester + "}";

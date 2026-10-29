@@ -31,4 +31,15 @@ class ModulTest {
         assertTrue(modul.istBenotet());
         assertEquals(Semester.WS25_26, modul.getSemester());
     }
+
+    @Test
+    void gleicheIdBedeutetGleichesModul() {
+        Modul a = new Modul("id-123", "Mathe", 6, true, Semester.WS24_25);
+        Modul b = new Modul("id-123", "Mathe", 6, true, Semester.WS24_25);
+        Modul c = new Modul("id-456", "Mathe", 6, true, Semester.WS24_25);
+
+        assertEquals(a, b);
+        assertEquals(a.hashCode(), b.hashCode());
+        assertNotEquals(a, c);
+    }
 }

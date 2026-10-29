@@ -1,6 +1,7 @@
 package com.example.einf;
 
 import java.time.LocalDate;
+import java.util.Objects;
 
 /**
  * Repräsentiert eine Frist (Anmeldung, Abgabe oder Klausur) mit optionalem Modulbezug.
@@ -100,6 +101,22 @@ public class Deadline {
 
     public boolean isAbgelaufen() {
         return datum.isBefore(LocalDate.now());
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Deadline other)) return false;
+        // istErledigt ist veraenderlicher Zustand, keine Identitaet.
+        return Objects.equals(beschreibung, other.beschreibung)
+                && Objects.equals(datum, other.datum)
+                && typ == other.typ
+                && Objects.equals(modulName, other.modulName);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(beschreibung, datum, typ, modulName);
     }
 
     @Override
