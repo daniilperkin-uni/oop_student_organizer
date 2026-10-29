@@ -92,16 +92,22 @@ public class LeistungsRechner {
 
         double summeNoteEcts = 0.0;
         int summeBenoteteEcts = 0;
+        boolean offenesModul = false;
 
         for (Modul m : module) {
             if (!m.istBenotet()) continue;
             boolean hatPruefung = m.getLeistung() != null && m.getLeistung() instanceof Pruefungsleistung;
             double note = hatPruefung ? m.getLeistung().getErreichteNote() : wunschnote;
+            if (!hatPruefung) {
+                offenesModul = true;
+            }
             summeNoteEcts += note * m.getEcts();
             summeBenoteteEcts += m.getEcts();
         }
 
-        if (summeBenoteteEcts == 0) return Optional.empty();
+        // Ohne offenes Modul gibt es nichts zu simulieren - dann ist der Wert
+        // kein projizierter Schnitt, sondern nur der aktuelle.
+        if (!offenesModul || summeBenoteteEcts == 0) return Optional.empty();
         return Optional.of(summeNoteEcts / summeBenoteteEcts);
     }
 
@@ -127,6 +133,50 @@ public class LeistungsRechner {
     public Optional<Double> benoetigteNoteFuerZiel(double zielnote) {
         if (zielnote < 1.0 || zielnote > 4.0) return Optional.empty();
 
+        Optional<Double> noetig = noetigerSchnitt(zielnote);
+        if (noetig.isEmpty()) return Optional.empty();
+        if (noetig.get() < 1.0 || noetig.get() > 5.0) return Optional.empty();
+        return noetig;
+    }
+
+    /**
+     * Wie {@link #benoetigteNoteFuerZiel(double)}, sagt aber zusaetzlich, warum ein
+     * Ziel nicht als Zahl darstellbar ist. Die UI braucht diese Unterscheidung:
+     * "nicht mehr erreichbar", "bereits sicher" und "keine offenen Module" sind drei
+     * verschiedene Aussagen, die sonst alle als "nicht erreichbar" erscheinen.
+     */
+    public ZielAusgang zielAusgang(double zielnote) {
+        if (zielnote < 1.0 || zielnote > 4.0) return ZielAusgang.NICHT_ERREICHBAR;
+
+        Optional<Double> noetig = noetigerSchnitt(zielnote);
+        if (noetig.isEmpty()) return ZielAusgang.KEINE_OFFENEN_MODULE;
+
+        double wert = noetig.get();
+        if (wert < 1.0) return ZielAusgang.NICHT_ERREICHBAR;
+        if (wert > 5.0) return ZielAusgang.BEREITS_SICHER;
+        if (wert > 4.0) return ZielAusgang.NUR_MIT_NICHT_BESTANDEN;
+        return ZielAusgang.ERREICHBAR;
+    }
+
+    /** Bewertet einen Ziel-Schnitt aus Sicht der UI. */
+    public enum ZielAusgang {
+        /** Mit bestandenen Leistungen erreichbar. */
+        ERREICHBAR,
+        /** Rechnerisch noetig waere ein Schnitt ueber 4.0, also eine nicht bestandene Leistung. */
+        NUR_MIT_NICHT_BESTANDEN,
+        /** Selbst mit 1.0 in allen offenen Modulen nicht mehr erreichbar. */
+        NICHT_ERREICHBAR,
+        /** Auch mit 5.0 in allen offenen Modulen noch erreicht - das Ziel steht schon fest. */
+        BEREITS_SICHER,
+        /** Es gibt keine offenen benoteten Module, das Ziel ist also bereits das Endergebnis. */
+        KEINE_OFFENEN_MODULE
+    }
+
+    /**
+     * Loest die gewichtete Gleichung nach dem noetigen Schnitt der offenen Module auf.
+     * Liefert empty, wenn es keine offenen benoteten Module gibt.
+     */
+    private Optional<Double> noetigerSchnitt(double zielnote) {
         double fixNoteEcts = 0.0;
         int fixEcts = 0;
         int offenEcts = 0;
@@ -145,8 +195,6 @@ public class LeistungsRechner {
         if (offenEcts == 0) return Optional.empty();
 
         double rest = zielnote * (fixEcts + offenEcts) - fixNoteEcts;
-        double noetig = rest / offenEcts;
-        if (noetig < 1.0 || noetig > 5.0) return Optional.empty();
-        return Optional.of(noetig);
+        return Optional.of(rest / offenEcts);
     }
 }

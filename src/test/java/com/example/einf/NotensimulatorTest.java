@@ -46,8 +46,10 @@ class NotensimulatorTest {
     void unbenotetIgnored() {
         Modul s = new Modul("SL", 5, false, null);
         s.setLeistung(new Studienleistung(s, true));
-        LeistungsRechner r = new LeistungsRechner(List.of(modul("A", 5, 2.0), s));
-        assertEquals(2.0, r.simuliereNotendurchschnitt(1.0).orElseThrow(), 1e-9);
+        // One open module has to be present, otherwise there is no projection to
+        // compare against. SL contributes nothing: (2.0*5 + 1.0*5) / 10 = 1.5.
+        LeistungsRechner r = new LeistungsRechner(List.of(modul("A", 5, 2.0), s, modul("Offen", 5, null)));
+        assertEquals(1.5, r.simuliereNotendurchschnitt(1.0).orElseThrow(), 1e-9);
     }
 
     @Test
@@ -59,13 +61,13 @@ class NotensimulatorTest {
     }
 
     @Test
-    @DisplayName("Nothing open -> no simulation possible")
-    void nothingOpenNoProjection() {
+    @DisplayName("Nothing open -> no projection at all")
+    void nothingOpenReturnsEmpty() {
         LeistungsRechner r = new LeistungsRechner(List.of(modul("A", 5, 2.0),
                 modul("B", 5, 3.0)));
-        // With nothing open the projection equals the actual average, so it
-        // stays computable; only the wish grade itself comes back.
-        assertEquals(2.5, r.simuliereNotendurchschnitt(3.9).orElseThrow(), 1e-9);
+        // Without an open module there is nothing to project: the value would just
+        // be the current average, and the UI presented it as a simulated result.
+        assertTrue(r.simuliereNotendurchschnitt(3.9).isEmpty());
     }
 
     @Test
@@ -95,5 +97,35 @@ class NotensimulatorTest {
         Optional<Double> out = r.benoetigteNoteFuerZiel(2.0);
         assertTrue(out.isEmpty());
         assertFalse(out.isPresent());
+    }
+
+    @Test
+    @DisplayName("Required average may exceed 4.0 - it is an average, not a per-exam grade")
+    void requiredAverageAbovePassingGradeIsReported() {
+        // 10 ECTS fixed at 1.0, 10 ECTS open, target 2.75 -> (2.75 * 20 - 10) / 10 = 4.5.
+        // 4.5 is a legitimate answer to "which average do I need", but it is not a
+        // passing outcome, so the simulator has to say so.
+        LeistungsRechner r = new LeistungsRechner(List.of(
+                modul("Fix", 10, 1.0), modul("Offen", 10, null)));
+        assertEquals(4.5, r.benoetigteNoteFuerZiel(2.75).orElseThrow(), 1e-9);
+        assertEquals(LeistungsRechner.ZielAusgang.NUR_MIT_NICHT_BESTANDEN, r.zielAusgang(2.75));
+    }
+
+    @Test
+    @DisplayName("Ziel-Ausgang unterscheidet erreichbar, sicher und ohne offene Module")
+    void zielAusgangUnterscheidet() {
+        // 10 ECTS at 1.0 fixed, 10 ECTS open: target 1.0 needs 1.0 -> reachable.
+        LeistungsRechner r = new LeistungsRechner(List.of(
+                modul("Fix", 10, 1.0), modul("Offen", 10, null)));
+        assertEquals(LeistungsRechner.ZielAusgang.ERREICHBAR, r.zielAusgang(1.0));
+
+        // Everything already graded: nothing left to simulate.
+        LeistungsRechner fertig = new LeistungsRechner(List.of(modul("A", 5, 2.0)));
+        assertEquals(LeistungsRechner.ZielAusgang.KEINE_OFFENEN_MODULE, fertig.zielAusgang(2.0));
+
+        // Very good fixed grades: even 5.0 in the open module keeps the target.
+        LeistungsRechner sicher = new LeistungsRechner(List.of(
+                modul("Fix", 30, 1.0), modul("Offen", 5, null)));
+        assertEquals(LeistungsRechner.ZielAusgang.BEREITS_SICHER, sicher.zielAusgang(3.0));
     }
 }

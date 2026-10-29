@@ -2,6 +2,7 @@ package com.example.einf;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.Optional;
 
@@ -58,5 +59,31 @@ class GradesTabControllerTest {
         // Gleiche Falle wie in EingabeValidierung.validiereNote: NaN besteht
         // jeden Groessenvergleich und landete sonst im Notensimulator.
         assertTrue(GradesTabController.validiereWunschNote("NaN").isPresent());
+    }
+
+    @Test
+    @DisplayName("Ein leeres Ergebnis wird nicht pauschal als \"nicht erreichbar\" formuliert")
+    void zielZeileUnterscheidetDieGruende() {
+        // Frueher erschienen alle drei Faelle als "nicht mehr erreichbar".
+        String sicher = GradesTabController.zielZeile(
+                3.0, Optional.empty(), LeistungsRechner.ZielAusgang.BEREITS_SICHER);
+        assertTrue(sicher.contains("bereits sicher"));
+
+        String keine = GradesTabController.zielZeile(
+                3.0, Optional.empty(), LeistungsRechner.ZielAusgang.KEINE_OFFENEN_MODULE);
+        assertTrue(keine.contains("keine offenen benoteten Module"));
+
+        String nicht = GradesTabController.zielZeile(
+                1.0, Optional.empty(), LeistungsRechner.ZielAusgang.NICHT_ERREICHBAR);
+        assertTrue(nicht.contains("nicht mehr erreichbar"));
+    }
+
+    @Test
+    @DisplayName("Eine nicht bestandene Durchschnittsnote wird als solche benannt")
+    void zielZeileBenenntNichtBestandeneNote() {
+        String zeile = GradesTabController.zielZeile(
+                2.75, Optional.of(4.5), LeistungsRechner.ZielAusgang.NUR_MIT_NICHT_BESTANDEN);
+        assertTrue(zeile.contains("4,50") || zeile.contains("4.50"));
+        assertTrue(zeile.contains("nicht bestandene"));
     }
 }

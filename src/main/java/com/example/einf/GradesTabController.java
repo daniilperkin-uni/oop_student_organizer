@@ -104,15 +104,9 @@ class GradesTabController {
 
         // For each interesting target show what would be needed.
         for (double ziel = 1.0; ziel <= 3.0; ziel += 0.5) {
-            Optional<Double> noetig = rechner.benoetigteNoteFuerZiel(ziel);
-            if (noetig.isPresent()) {
-                text.append(String.format(Locale.GERMAN,
-                        "Für Endnote %.1f: Schnitt von %.2f in den offenen Modulen nötig.%n",
-                        ziel, noetig.get()));
-            } else {
-                text.append(String.format(Locale.GERMAN,
-                        "Für Endnote %.1f: nicht mehr erreichbar.%n", ziel));
-            }
+            text.append(zielZeile(ziel,
+                    rechner.benoetigteNoteFuerZiel(ziel),
+                    rechner.zielAusgang(ziel)));
         }
 
         Alert alert = new Alert(Alert.AlertType.INFORMATION);
@@ -221,5 +215,32 @@ class GradesTabController {
             }
             gradesChart.getData().add(series);
         }
+    }
+
+    /**
+     * Formuliert eine Zeile fuer den Notensimulator.
+     *
+     * <p>
+     * JavaFX-frei und statisch, damit die Wortwahl testbar ist: ein leeres
+     * {@code noetig} bedeutet nicht immer dasselbe - "nicht erreichbar",
+     * "bereits sicher" und "keine offenen Module" sind drei verschiedene
+     * Aussagen, die vorher alle als "nicht mehr erreichbar" erschienen.
+     * </p>
+     */
+    static String zielZeile(double ziel, Optional<Double> noetig, LeistungsRechner.ZielAusgang ausgang) {
+        return switch (ausgang) {
+            case ERREICHBAR -> String.format(Locale.GERMAN,
+                    "Für Endnote %.1f: Schnitt von %.2f in den offenen Modulen nötig.%n",
+                    ziel, noetig.orElseThrow());
+            case NUR_MIT_NICHT_BESTANDEN -> String.format(Locale.GERMAN,
+                    "Für Endnote %.1f: rechnerisch %.2f nötig - das wäre eine nicht bestandene Leistung.%n",
+                    ziel, noetig.orElseThrow());
+            case NICHT_ERREICHBAR -> String.format(Locale.GERMAN,
+                    "Für Endnote %.1f: nicht mehr erreichbar.%n", ziel);
+            case BEREITS_SICHER -> String.format(Locale.GERMAN,
+                    "Für Endnote %.1f: bereits sicher - auch mit 5,0 in allen offenen Modulen.%n", ziel);
+            case KEINE_OFFENEN_MODULE -> String.format(Locale.GERMAN,
+                    "Für Endnote %.1f: keine offenen benoteten Module.%n", ziel);
+        };
     }
 }
