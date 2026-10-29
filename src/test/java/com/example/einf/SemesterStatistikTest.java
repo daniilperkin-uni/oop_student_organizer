@@ -2,6 +2,7 @@ package com.example.einf;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.List;
 
@@ -74,5 +75,13 @@ class SemesterStatistikTest {
     void leerOk() {
         SemesterStatistik s = new SemesterStatistik(List.of());
         assertEquals(0, s.datensaetze().size());
+    }
+
+    @Test
+    @DisplayName("Null-Liste und Null-Elemente werden abgelehnt statt mit NPE zu fliegen")
+    void eingabenWerdenValidliert() {
+        assertThrows(IllegalArgumentException.class, () -> new SemesterStatistik(null));
+        assertThrows(IllegalArgumentException.class,
+                () -> new SemesterStatistik(java.util.Collections.singletonList(null)));
     }
 }

@@ -30,6 +30,14 @@ public class SemesterStatistik {
     private final List<Datensatz> datensaetze = new ArrayList<>();
 
     public SemesterStatistik(List<Modul> module) {
+        if (module == null) {
+            throw new IllegalArgumentException("Modulliste darf nicht null sein.");
+        }
+        for (Modul m : module) {
+            if (m == null) {
+                throw new IllegalArgumentException("Modul darf nicht null sein.");
+            }
+        }
         Map<Semester, List<Modul>> gruppen = new LinkedHashMap<>();
         for (Semester s : Semester.values()) {
             gruppen.put(s, new ArrayList<>());
